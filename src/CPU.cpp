@@ -1,10 +1,7 @@
-#include <iostream>
-#include <iomanip>
 #include "CPU.hpp"
 
-
 //Define "byte" to be a bitset of 8
-typedef std::bitset<8> byte;
+typedef uint8_t byte;
 		
 //Constructor which not used yet
 CPU::CPU(){}
@@ -27,16 +24,30 @@ void CPU::start(){
 	writeMem(0x4017,0x00);
 	writeMem(0x4015,0x00);
 	writeMem(0x4000,0x400F,0x00);
+	running=true;
 	std::cout << "Startup: Completed"<<std::endl;
 }
+void CPU::stop(std::string reason){
+	std::cout << "Stopping CPU: " << reason << std::endl;
+	running=false;
+}
+
+int inc = 0;
 
 //Function to be called each time the system cycles, to perform CPU tasks.
-void CPU::cycle(){}
+void CPU::cycle(){
+	if(inc<20000)
+	{
+		std::cout << ".";
+		inc++;
+	}
+	else
+		stop("Finished 20000 cycles");
+}
 
 //---MEMORY ACCESS---//
 
-byte CPU::readMem(short address)
-{
+byte CPU::readMem(short address){
 	return memory[address];
 }
 void CPU::writeMem(short address, byte value){
@@ -63,10 +74,10 @@ void CPU::decode(byte opCode, byte param1, byte param2){}
 void CPU::decode(byte opCode, byte param1, byte param2, byte param3){}
 void CPU::decodeAt(short address){}
 
-//Some OPCodes require a certain number of cycles to pass to complete the operation.
-//Theoretically the operation can be completed on the same cycle, so we wait for the
-//operation to 'complete' before accepting other operation. Wasted CPU cycles but
-//its the best I can think of right now. TODO: RETHINK THIS SYSTEM			
+/*Some OPCodes require a certain number of cycles to pass to complete the operation.
+ *Theoretically the operation can be completed on the same cycle, so we wait for the
+ *operation to 'complete' before accepting other operation. Wasted CPU cycles but
+ *its the best I can think of right now. TODO: RETHINK THIS SYSTEM	*/		
 void CPU::waitForCycles(short toWait){
 	cycleWait = toWait;
 }	
@@ -77,7 +88,6 @@ bool CPU::sleeping(){
 	else
 		return false;
 }	
-
 
 //---GET & SET---//
 

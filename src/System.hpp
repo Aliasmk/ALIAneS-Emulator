@@ -2,22 +2,31 @@
 #define NES_SYSTEM
 class System {
 	private:
-		CPU nesCPU;
-		bool powerState;
-		//File currentCart;
+		//CPU nesCPU;
 		//PPU nesPPU;
 		//APU newAPU
 		
+		bool powerState;
+		
+		//File currentCart;
+		
+		void tick();
+		
+		int tickCount;
+		
 	public: 
-		int main();
 		System();
-		void start();
+		
+		int main();
+		
+		void init();
+		void run();
+		
 		void setPowerState(bool state);
 		bool getPowerState();
+		void sendReset();
+		
 		//void openCartridge(File cartFile);
-		//void unloadCartridge(File cartFile);
-		void sendReset();		
-		
-		
+		//void unloadCartridge(File cartFile);		
 };
 #endif
