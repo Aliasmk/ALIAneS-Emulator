@@ -1,5 +1,10 @@
 #ifndef NES_SYSTEM
 #define NES_SYSTEM
+
+#include <fstream>
+#include <string>
+#include <iostream>
+
 class System {
 	private:
 		//CPU nesCPU;
@@ -8,7 +13,8 @@ class System {
 		
 		bool powerState;
 		
-		//File currentCart;
+		std::ifstream currentCart;
+		std::string cartPath;
 		
 		void tick();
 		
@@ -26,7 +32,7 @@ class System {
 		bool getPowerState();
 		void sendReset();
 		
-		//void openCartridge(File cartFile);
-		//void unloadCartridge(File cartFile);		
+		void openCartridge(std::string cartPath);
+		void unloadCartridge(std::ifstream& cartFile);		
 };
 #endif

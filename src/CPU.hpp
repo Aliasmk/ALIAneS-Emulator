@@ -19,14 +19,9 @@ class CPU {
 		byte p;
 		byte memory[0xFFFF];
 		short cycleWait;
+				
 		
-		
-		byte readMem(short address);
-		
-		
-		
-		
-		
+	
 	public:
 		CPU();
 		void start();
@@ -36,8 +31,9 @@ class CPU {
 		void cycle();
 		
 		//Memory
-		void writeMem(short address, byte value);
-		void writeMem(short address1, short address2, byte value);
+		void writeMem(int address, byte value);
+		void writeMem(int address1, int address2, byte value);
+		byte readMem(int address);
 		
 		//Decoding and running OPcodes
 		void decode(byte opCode);

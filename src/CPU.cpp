@@ -1,7 +1,7 @@
 #include "CPU.hpp"
 
 //Define "byte" to be a bitset of 8
-typedef uint8_t byte;
+typedef std::uint8_t byte;
 		
 //Constructor which not used yet
 CPU::CPU(){}
@@ -32,13 +32,14 @@ void CPU::stop(std::string reason){
 	running=false;
 }
 
+//TODO: remove this var and the 20000 cycle code in cycle() (temporary)
 int inc = 0;
 
 //Function to be called each time the system cycles, to perform CPU tasks.
 void CPU::cycle(){
 	if(inc<20000)
 	{
-		std::cout << ".";
+		//std::cout << ".";
 		inc++;
 	}
 	else
@@ -47,15 +48,18 @@ void CPU::cycle(){
 
 //---MEMORY ACCESS---//
 
-byte CPU::readMem(short address){
+byte CPU::readMem(int address){
 	return memory[address];
 }
-void CPU::writeMem(short address, byte value){
-	if(value != 0x00)
-		std::cout << "Writing non-zero data: " << value << " to address " << std::hex << address << std::endl;	
+void CPU::writeMem(int address, byte value){
+		std::cout << std::hex << (int)value;
+		
+	
+	//if(value != 0x00)
+//		std::cout << "Writing non-zero data: " << std::hex << (int)value << " to address " << std::hex << address << std::endl;	
 	memory[address] = value;
 }
-void CPU::writeMem(short addressStart, short addressEnd, byte value){
+void CPU::writeMem(int addressStart, int addressEnd, byte value){
 	for(int i=addressStart; i<=addressEnd; i++)
 	{
 		//std::cout << i;
@@ -140,5 +144,3 @@ byte CPU::getS(){
 byte CPU::getP(){
 	return p;
 }
-	
-
