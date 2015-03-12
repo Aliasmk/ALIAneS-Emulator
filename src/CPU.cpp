@@ -52,11 +52,12 @@ byte CPU::readMem(int address){
 	return memory[address];
 }
 void CPU::writeMem(int address, byte value){
-		std::cout << std::hex << (int)value;
+		//std::cout << std::hex << (int)value;
 		
 	
-	//if(value != 0x00)
-//		std::cout << "Writing non-zero data: " << std::hex << (int)value << " to address " << std::hex << address << std::endl;	
+	if(value != 0x00)
+	std::cout << "Writing non-zero data: " << std::hex << (int)value << " to address " << std::hex << address << std::endl;	
+	
 	memory[address] = value;
 }
 void CPU::writeMem(int addressStart, int addressEnd, byte value){
