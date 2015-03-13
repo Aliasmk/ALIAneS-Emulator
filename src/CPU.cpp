@@ -37,13 +37,13 @@ int inc = 0;
 
 //Function to be called each time the system cycles, to perform CPU tasks.
 void CPU::cycle(){
-	if(inc<20000)
+	if(inc<2000000)
 	{
 		//std::cout << ".";
 		inc++;
 	}
 	else
-		stop("Finished 20000 cycles");
+		stop("Finished 2000000 cycles");
 }
 
 //---MEMORY ACCESS---//
