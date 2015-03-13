@@ -1,31 +1,42 @@
+/* Cartridge Class :: ALIAneS Emulator Project
+ *
+ * http://aliasmk.blogspot.com
+ * http://michael.kafarowski.com
+ *
+ */
+
 #include "Cartridge.hpp"
 #include "CPU.hpp"
 
+//Bitsets for flags 6 and 7 of the header line
 struct Cartridge::flag6 {
-	byte lowermap : 4;
-	bool fourscreenmode : 1;
-	bool trainer : 1;
-	bool batterySRAM : 1;
-	bool vertMirror: 1;
+	byte lowermap : 4; 			//Lower 4 bits of mapper number
+	bool fourscreenmode : 1;	//Four screenmode
+	bool trainer : 1;			//Trainer located in RAM?
+	bool batterySRAM : 1;		//Is there a battery backed SRAM?
+	bool vertMirror: 1;			//Horizontal (0) / Vertical (1) mirroring
 };
 struct Cartridge::flag7 {
-	byte uppermap : 4;
-	bool : 2;
-	bool PC10: 1;
-	bool VS: 1;
+	byte uppermap : 4;			//Upper 4 bits of mapper number
+	bool : 2;					//Unused
+	bool PC10: 1;				//PC10
+	bool VS: 1;					//VS
 };
 
 Cartridge::Cartridge(std::string cartPath, CPU::CPU& nesCPU){
 	openCartridge(cartPath, nesCPU);
 }
 
+//Open the file stream, parse the header and based on that information, allocate CPU memory for program rom.
 void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU){
-	currentCart.open(cartPath, std::ios::binary);
 	
+	//Open file as binary and check that it opened
+	currentCart.open(cartPath, std::ios::binary);
 	if(currentCart){
 			parseHeader();
 			std::cout << "ROM Import: Start " <<std::endl;
 			std::cout << "ROM Import: ";
+			//This branch determines the size of the rom PRG based on the header info
 			if(PRGsize16x == 0x02){
 				std::cout << "32K rom loaded." << std::endl;
 				for(int offset = 0x0; offset<0x8000; offset++){
@@ -33,6 +44,9 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU){
 				}
 			} else if(PRGsize16x == 0x01) {
 				std::cout << "16K rom loaded. Mirroring" << std::endl;
+				//Memory is written to both banks. TODO: Add an implicit function in the 
+				//write mem function to mirror data automatically based on conditions,
+				//such as writing to ram (4 times mirrored) or PRG with a 16k rom.
 				for(int offset = 0x0; offset<0x4000; offset++){
 					nesCPU.writeMem(0x8000+offset,(byte)currentCart.get());
 				}
@@ -48,19 +62,22 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU){
 	else{
 		std::cout << "ROM Import: Failed - File unreadable"<< std::endl;
 	}
+	currentCart.close();
 }
 
 //Read the 16 byte header at the top of the .NES file. 
 void Cartridge::parseHeader(){
+	//Import all header information into an array for easy access later
 	for(int i = 0; i <= 0xf; i++){
 		header[i]=currentCart.get();
 	}	
+	//Checks the first 4 bits for NES<eof> as rom verification, then continue
 	if(header[0] == 'N' && header[1] == 'E' && header[2] == 'S' && header[3] == 0x1A){
-		verified = true;
-		PRGsize16x=header[4];
-		CHRsize8x=header[5];
-		flag6 f6 = {header[6]};
-		flag7 f7 = {header[7]};
+		verified = true; 			//if NES<eof> begins the header
+		PRGsize16x=header[4];		//Number of 16k blocks of program code
+		CHRsize8x=header[5];		//Number of 8k blocks of character code
+		flag6 f6 = {header[6]};		//bitfield for flag6. see struct above
+		flag7 f7 = {header[7]};		//bitfield for flag7. see struct above
 	}
 	else{	
 		//TODO implement errors not just quitting.

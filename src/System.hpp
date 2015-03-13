@@ -1,3 +1,10 @@
+/* System Header :: ALIAneS Emulator Project
+ *
+ * http://aliasmk.blogspot.com
+ * http://michael.kafarowski.com
+ *
+ */
+
 #ifndef NES_SYSTEM
 #define NES_SYSTEM
 
@@ -7,21 +14,13 @@
 
 class System {
 	private:
-		//CPU nesCPU;
-		//PPU nesPPU;
-		//APU newAPU
-		
 		bool powerState;
-		
-		
-		
-		void tick();
-		
+			
+		void tick();	
 		int tickCount;
-		
 	public: 
 		System();
-		
+
 		int main();
 		
 		void init();

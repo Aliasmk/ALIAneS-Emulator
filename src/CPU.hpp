@@ -3,12 +3,18 @@
 
 #include <string>
 #include <cstdint>
+/* CPU Header :: ALIAneS Emulator Project
+ *
+ * http://aliasmk.blogspot.com
+ * http://michael.kafarowski.com
+ *
+ */
+
 #include <iostream>
 #include <iomanip>
 
 class CPU {
 	private:
-		
 		typedef std::uint8_t byte;
 		
 		byte a;
@@ -20,15 +26,13 @@ class CPU {
 		byte memory[0xFFFF];
 		short cycleWait;
 		byte resetVector;
-				
-		
-	
 	public:
 		CPU();
+		
+		//Normal functions
 		void start();
 		void stop(std::string reason);
 		bool running;
-		
 		void cycle();
 		
 		//Memory

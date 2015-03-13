@@ -1,3 +1,10 @@
+/* CPU Class :: ALIAneS Emulator Project
+ *
+ * http://aliasmk.blogspot.com
+ * http://michael.kafarowski.com
+ *
+ */
+ 
 #include "CPU.hpp"
 
 //Define "byte" to be a bitset of 8
@@ -26,20 +33,25 @@ void CPU::start(){
 	writeMem(0x4000,0x400F,0x00);
 	running=true;
 
-	setPC((readMem(0xfffc) | (readMem(0xfffd) << 8)));
+	//Set the program counter to equal the reset vector, located at 0xFFFC
+	//Because the addressing in the 6502 is backwards, FFFC is concatenated to the end of 
+	//FFFD using bitwise shifts and ORs
+	setPC((readMem(0xFFFC) | (readMem(0xFFFD) << 8)));
 	
-	std::cout << "Startup: Completed"<<std::endl;
+	//This is a very long line to output a short amount of debug text
 	std::cout << "PC: "  <<std::setfill('0')<< std::setw(4)<<std::hex<< (int)getPC() << " reset vectors: " << std::setw(2)<<std::setfill('0') <<std::hex << (int)readMem(0xfffc) <<std::setw(2)<<std::setfill('0')<<std::hex<< (int)readMem(0xfffd)<<std::endl;
+	std::cout << "Startup: Completed"<<std::endl;
+	
 }
 void CPU::stop(std::string reason){
 	std::cout << "Stopping CPU: " << reason << std::endl;
 	running=false;
 }
 
-//TODO: remove this var and the 20000 cycle code in cycle() (temporary)
-int inc = 0;
 
 //Function to be called each time the system cycles, to perform CPU tasks.
+//TODO: remove this var and the 20000 cycle code in cycle() (temporary)
+int inc = 0;
 void CPU::cycle(){
 	if(inc<2000000)
 	{
@@ -52,18 +64,17 @@ void CPU::cycle(){
 
 //---MEMORY ACCESS---//
 
+//Returns a memory at selected address
 byte CPU::readMem(int address){
 	return memory[address];
 }
+//Writes given data memory to the selected address
 void CPU::writeMem(int address, byte value){
-		//std::cout <<d::hex << (int)value;
-		
-	
 	//if(value != 0x00)
-	std::cout << "Writing data: " << std::hex << (int)value << " to address " << std::hex << address << std::endl;	
-	
+		//std::cout << "Writing data: " << std::hex << (int)value << " to address " << std::hex << address << std::endl;	
 	memory[address] = value;
 }
+//Writes given data to a range on addresses between start and end
 void CPU::writeMem(int addressStart, int addressEnd, byte value){
 	for(int i=addressStart; i<=addressEnd; i++)
 	{
@@ -86,7 +97,7 @@ void CPU::decodeAt(short address){}
 /*Some OPCodes require a certain number of cycles to pass to complete the operation.
  *Theoretically the operation can be completed on the same cycle, so we wait for the
  *operation to 'complete' before accepting other operation. Wasted CPU cycles but
- *its the best I can think of right now. TODO: RETHINK THIS SYSTEM	*/		
+ *its the best I can think of right now.	*/		
 void CPU::waitForCycles(short toWait){
 	cycleWait = toWait;
 }	

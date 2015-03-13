@@ -1,3 +1,10 @@
+/* Cartridge Header :: ALIAneS Emulator Project
+ *
+ * http://aliasmk.blogspot.com
+ * http://michael.kafarowski.com
+ *
+ */
+
 #ifndef NES_CARTRIDGE
 #define NES_CARTRIDGE
 
