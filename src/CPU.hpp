@@ -14,11 +14,12 @@ class CPU {
 		byte a;
 		byte x;
 		byte y;
-		short pc;
+		uint16_t pc;
 		byte s;
 		byte p;
 		byte memory[0xFFFF];
 		short cycleWait;
+		byte resetVector;
 				
 		
 	
@@ -48,14 +49,14 @@ class CPU {
 		void setA(byte a);
 		void setX(byte x);
 		void setY(byte y);
-		void setPC(short address);
+		void setPC(uint16_t address);
 		void setS(byte s);
 		void setP(byte p);
 		//Getter Functions
 		byte getA();
 		byte getX();
 		byte getY();
-		short getPC();
+		uint16_t getPC();
 		byte getS();
 		byte getP();
 	

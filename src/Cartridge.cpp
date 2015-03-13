@@ -52,7 +52,7 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU){
 
 //Read the 16 byte header at the top of the .NES file. 
 void Cartridge::parseHeader(){
-	for(int i = 0; i < 0xf; i++){
+	for(int i = 0; i <= 0xf; i++){
 		header[i]=currentCart.get();
 	}	
 	if(header[0] == 'N' && header[1] == 'E' && header[2] == 'S' && header[3] == 0x1A){

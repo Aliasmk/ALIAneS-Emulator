@@ -10,8 +10,8 @@ Cartridge* cart;
 
 
 System::System(){
-	init();
 	cart = new Cartridge("../res/mario.nes", nesCPU);
+	init();	
 	run();
 }
 

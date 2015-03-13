@@ -25,7 +25,11 @@ void CPU::start(){
 	writeMem(0x4015,0x00);
 	writeMem(0x4000,0x400F,0x00);
 	running=true;
+
+	setPC((readMem(0xfffc) | (readMem(0xfffd) << 8)));
+	
 	std::cout << "Startup: Completed"<<std::endl;
+	std::cout << "PC: "  <<std::setfill('0')<< std::setw(4)<<std::hex<< (int)getPC() << " reset vectors: " << std::setw(2)<<std::setfill('0') <<std::hex << (int)readMem(0xfffc) <<std::setw(2)<<std::setfill('0')<<std::hex<< (int)readMem(0xfffd)<<std::endl;
 }
 void CPU::stop(std::string reason){
 	std::cout << "Stopping CPU: " << reason << std::endl;
@@ -52,11 +56,11 @@ byte CPU::readMem(int address){
 	return memory[address];
 }
 void CPU::writeMem(int address, byte value){
-		//std::cout << std::hex << (int)value;
+		//std::cout <<d::hex << (int)value;
 		
 	
-	if(value != 0x00)
-	std::cout << "Writing non-zero data: " << std::hex << (int)value << " to address " << std::hex << address << std::endl;	
+	//if(value != 0x00)
+	std::cout << "Writing data: " << std::hex << (int)value << " to address " << std::hex << address << std::endl;	
 	
 	memory[address] = value;
 }
@@ -109,7 +113,7 @@ void CPU::setY(byte i){
 	y = i;
 }
 //Set the program counter to the specified address
-void CPU::setPC(short address){
+void CPU::setPC(uint16_t address){
 	pc = address;
 }
 //Set the stack pointer to the location at i
@@ -134,7 +138,7 @@ byte CPU::getY(){
 	return y;
 }
 //Returns the program counter
-short CPU::getPC(){
+uint16_t CPU::getPC(){
 	return pc;
 }
 //Returns stack pointer location
