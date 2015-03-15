@@ -14,8 +14,10 @@ CPU nesCPU;
 //APU nesAPU;
 Cartridge* cart;
 
+std::string game = "../res/mario.nes";
+
 System::System(){
-	cart = new Cartridge("../res/dk.nes", nesCPU);
+	cart = new Cartridge(game, nesCPU);
 	init();	
 	run();
 }

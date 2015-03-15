@@ -45,7 +45,7 @@ class CPU {
 		void decode(byte opCode, byte param1);
 		void decode(byte opCode, byte param1, byte param2);
 		void decode(byte opCode, byte param1, byte param2, byte param3);
-		void decodeAt(short address);
+		void decodeAt(int address);
 		void waitForCycles(short toWait);		
 		bool sleeping();
 		
@@ -54,6 +54,7 @@ class CPU {
 		void setX(byte x);
 		void setY(byte y);
 		void setPC(uint16_t address);
+		void incPC();
 		void setS(byte s);
 		void setP(byte p);
 		//Getter Functions
