@@ -11,6 +11,8 @@
 #include <string>
 #include <iostream>
 #include <cstdlib>
+#include "CPU.hpp"
+
 
 class System {
 	private:
@@ -21,10 +23,11 @@ class System {
 	public: 
 		System();
 
-		int main();
+		int main2();
 		
 		void init();
 		void run();
+		CPU getCPU();
 		
 		void setPowerState(bool state);
 		bool getPowerState();

@@ -1,8 +1,3 @@
-#ifndef NESCPU
-#define	NESCPU
-
-#include <string>
-#include <cstdint>
 /* CPU Header :: ALIAneS Emulator Project
  *
  * http://aliasmk.blogspot.com
@@ -10,6 +5,11 @@
  *
  */
 
+#ifndef NESCPU
+#define	NESCPU
+
+#include <string>
+#include <cstdint>
 #include <iostream>
 #include <iomanip>
 
@@ -39,6 +39,8 @@ class CPU {
 		void writeMem(int address, byte value);
 		void writeMem(int address1, int address2, byte value);
 		byte readMem(int address);
+		byte readMem(byte firstByte, byte secondByte);
+		byte readNext();
 		
 		//Decoding and running OPcodes
 		void decode(byte opCode);
@@ -48,6 +50,9 @@ class CPU {
 		void decodeAt(int address);
 		void waitForCycles(short toWait);		
 		bool sleeping();
+		void wake();
+		
+		int toAddress(byte firstByte, byte secondByte);
 		
 		//Setter Functions
 		void setA(byte a);

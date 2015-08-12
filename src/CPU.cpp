@@ -8,8 +8,10 @@
 #include "CPU.hpp"
 
 //Define "byte" to be a bitset of 8
-typedef std::uint8_t byte;
-		
+typedef uint8_t byte;
+
+using namespace std;
+
 //Constructor which not used yet
 CPU::CPU(){}
 	
@@ -32,20 +34,32 @@ void CPU::start(){
 	writeMem(0x4015,0x00);
 	writeMem(0x4000,0x400F,0x00);
 	running=true;
+	wake();
 
 	//Set the program counter to equal the reset vector, located at 0xFFFC
 	//Because the addressing in the 6502 is backwards, FFFC is concatenated to the end of 
 	//FFFD using bitwise shifts and ORs
-	setPC((readMem(0xFFFC) | (readMem(0xFFFD) << 8)));
+	setPC(toAddress(readMem(0xFFFC),readMem(0xFFFD)));
 	
 	//This is a very long line to output a short amount of debug text
-	std::cout << "PC: "  <<std::setfill('0')<< std::setw(4)<<std::hex<< (int)getPC() << " reset vectors: " << std::setw(2)<<std::setfill('0') <<std::hex << (int)readMem(0xfffc) <<std::setw(2)<<std::setfill('0')<<std::hex<< (int)readMem(0xfffd)<<std::endl;
-	std::cout << "Startup: Completed"<<std::endl;
-
-	decodeAt(0xfd14);
+	cout << "PC: "  <<setfill('0')<< setw(4)<<hex<< (int)getPC() << " reset vectors: " << setw(2)<<setfill('0') <<hex << (int)readMem(0xfffc) <<setw(2)<<setfill('0')<<hex<< (int)readMem(0xfffd)<<endl;
+	cout << "Startup: Completed"<<endl;
+	//DEBUG
+	cout << "Address\t\tOPCode\t\tAddressMode\t\tOpAddr\t\tOperand\t\tNextByte\t\tByteAfter" << endl;
+	
+	//Tests go below:
+	
+	
+	
+	
+	//decodeAt(getPC());
+	//cout << "Output (6e) : " << (int)getA()<<endl;
+	//stop("Tests complete");
+	//END tests
+	
 }
-void CPU::stop(std::string reason){
-	std::cout << "Stopping CPU: " << reason << std::endl;
+void CPU::stop(string reason){
+	cout << "Stopping CPU: " << reason << endl;
 	running=false;
 }
 
@@ -54,10 +68,12 @@ void CPU::stop(std::string reason){
 //TODO: remove this var and the 20000 cycle code in cycle() (temporary)
 int inc = 0;
 void CPU::cycle(){
-	if(inc<35000)
+	if(inc<20000)
 	{
-		decodeAt(getPC());
-		incPC();
+		if(!sleeping()){
+			decodeAt(getPC());
+			incPC();
+		}
 	}
 	else
 		stop("Finished 2000000 cycles");
@@ -71,24 +87,42 @@ void CPU::cycle(){
 byte CPU::readMem(int address){
 	return memory[address];
 }
+
+//Give <instruction> (firstbyte) (secondbyte) this returns memory at secondbyte:firstbyte
+byte CPU::readMem(byte firstByte, byte secondByte)
+{
+	int address = firstByte | (secondByte<<8); 
+	return memory[address];
+}
+//Increments the program counter and reads the next bit
+byte CPU::readNext(){
+	incPC();
+	return readMem(getPC());
+}
+
 //Writes given data memory to the selected address
 void CPU::writeMem(int address, byte value){
 	//if(value != 0x00)
-		std::cout << "Writing data: " << std::hex << (int)value << " to address " << std::hex << address << std::endl;	
+		
+		//cout << "Writing data: " << hex << (int)value << " to address " << hex << address << endl;	
 	memory[address] = value;
 }
 //Writes given data to a range on addresses between start and end
 void CPU::writeMem(int addressStart, int addressEnd, byte value){
 	for(int i=addressStart; i<=addressEnd; i++)
 	{
-		//std::cout << i;
+		//cout << i;
 		memory[i] = value;
 		if(value != 0x00)
-			std::cout << "Writing non-zero data: " << value << " to address " << std::hex << i << std::endl;
+			cout << "Writing non-zero data: " << hex << value << " to address " << hex << i << endl;
 	}
 }
 
 //---DECODING---//
+
+//uint16_t  get16bit(uint16_t pc){
+//	return (readMem(pc+1)<<4)&(readMem(pc));
+//}
 
 //OPCode decoding methods. TODO: Implement these
 void CPU::decode(byte opCode){}
@@ -104,23 +138,25 @@ void CPU::decodeAt(int address){
 	byte aaa = (opcode & 0xe0) >> 5;
 	byte bbb = (opcode & 0x1c) >> 2 ;
 	byte cc  = (opcode & 0x03);
-	//std::cout  << (int)opcode << " -aaa: " << aaa << " -bbb: " << bbb << " -cc: " << cc << std::endl; 
+	//cout  << (int)opcode << " -aaa: " << aaa << " -bbb: " << bbb << " -cc: " << cc << endl; 
 	
 	bool valid = false;
-	std::string operation = "";
-	std::string addressmode = "";
+	string operation = "";
+	string addressmode = "implied";
 	
-	if(cc == 1) //cc = 01
+	/*if(cc == 1) //cc = 01
 	{
 		switch(aaa){
 			case 0:
 				operation = "ORA";
+				incPC();
 				switch(bbb){
 					case 0: //(zeropage,x)
 						addressmode = "(zeropage,x)";
 					break;
 					case 1: //zeropage
 						addressmode = "zeropage";
+
 					break;
 					case 2: //immediate
 						addressmode = "immediate";
@@ -142,6 +178,11 @@ void CPU::decodeAt(int address){
 					break;
 				}
 				valid = true;
+				if(getA() == 0)
+				{
+					//TODO: Set zero flag
+				}
+				//TODO: if bit seven set, add negative flag
 			break;
 			case 1:
 				switch(bbb){
@@ -357,6 +398,9 @@ void CPU::decodeAt(int address){
 		switch(aaa)	{
 			case 0:
 				switch(bbb){
+					case 0: //immediate
+						addressmode = "immediate";
+					break;
 					case 1: //zeropage
 						addressmode = "zeropage";
 					break;
@@ -378,6 +422,9 @@ void CPU::decodeAt(int address){
 			break;
 			case 1:
 				switch(bbb){
+					case 0: //immediate
+						addressmode = "immediate";
+					break;
 					case 1: //zeropage
 						addressmode = "zeropage";
 					break;
@@ -546,7 +593,7 @@ void CPU::decodeAt(int address){
 						addressmode = "absolute";
 					break;
 				}
-				operation = "JMP (abs)";
+				operation = "JMPa";
 				valid = true;
 			break;
 			case 4:
@@ -620,31 +667,481 @@ void CPU::decodeAt(int address){
 	else //one-off codes
 	{
 		
+	}*/
+	
+	//CC: General Set. AAA: Instruction. BBB: Addressing mode. Text strings passed later.
+	//First decode the address and operands required based on the address mode asked for and store it. Then use it in the specific instruction set.
+	
+	if(cc == 1) //cc = 01
+	{
+		switch(bbb){
+					case 0: //(zeropage,x)
+						addressmode = "(zeropage,x)";
+					break;
+					case 1: //zeropage
+						addressmode = "zeropage";
+					break;
+					case 2: //immediate
+						addressmode = "immediate";
+						
+					break;
+					case 3: //absolute
+						addressmode = "absolute";
+					break;
+					case 4: //(zeropage),y
+						addressmode = "(zeropage),y";
+					break;
+					case 5: //zeropage,x
+						addressmode = "zeropage,x";
+					break;
+					case 6: //absolute,y
+						addressmode = "absolute,y";
+					break;
+					case 7: //absolute,x
+						addressmode = "absolute,x";
+					break;
+				}	
+		switch(aaa){
+			case 0:
+				operation = "ORA";
+				valid = true;		
+			break;
+			case 1:
+				operation = "AND";
+				valid = true;
+			break;
+			case 2:
+				operation = "EOR";
+				valid = true;
+			break;
+			case 3:
+				operation = "ADC";
+				valid = true;
+				break;
+			case 4:
+				operation = "STA";
+				valid = true;
+			break;
+			case 5:
+				operation = "LDA";
+				valid = true;
+			break;
+			case 6:
+				operation = "CMP";
+				valid = true;
+			break;
+			case 7:
+				operation = "SBC";
+				valid = true;
+			break;
+		}			
+	}
+	else if(cc == 2) //cc = 10
+	{
+		switch(bbb){
+					case 0: //immediate
+						addressmode = "immediate";
+					break;
+					case 1: //zeropage
+						addressmode = "zeropage";
+					break;
+					case 2: //accumulator
+						addressmode = "accumulator";
+					break;
+					case 3: //absolute
+						addressmode = "absolute";
+					break;
+					case 5: //zeropage,x
+						addressmode = "zeropage,x";
+					break;
+					case 7: //absolute,x
+						addressmode = "absolute,y";
+					break;
+				}
+		switch(aaa)	{
+			case 0:
+				operation = "ASL";
+				valid = true;
+			break;
+			case 1:
+				operation = "ROL";
+				valid = true;
+			break;
+			case 2:
+				operation = "LSR";
+				valid = true;
+			break;
+			case 3:
+				operation = "ROR";
+				valid = true;
+			break;
+			case 4:
+				operation = "STX";
+				valid = true;
+			break;
+			case 5:
+				operation = "LDX";
+				valid = true;
+			break;
+			case 6:
+				operation = "DEC";
+				valid = true;
+			break;
+			case 7:
+				operation = "INC";
+				valid = true;
+			break;
+		}
+	}
+	else if(cc == 0) //cc = 00
+	{
+		switch(bbb){
+					case 0: //immediate
+						addressmode = "immediate";
+					break;
+					case 1: //zeropage
+						addressmode = "zeropage";
+					break;
+					case 3: //absolute
+						addressmode = "absolute";
+					break;
+					case 5: //zeropage,x
+						addressmode = "zeropage,x";
+					break;
+					case 7: //absolute,x
+						addressmode = "absolute,x";
+					break;
+		}	
+		switch(aaa)	{
+			case 1:
+				operation = "BIT";
+				valid = true;
+			break;
+			case 2:
+				operation = "JMP";
+				valid = true;
+			break;
+			case 3:
+				operation = "JMPa";
+				valid = true;
+			break;
+			case 4:
+				operation = "STY";
+				valid = true;
+			break;
+			case 5:
+				operation = "LDY";
+				valid = true;
+			break;
+			case 6:
+				operation = "CPY";
+				valid = true;
+			break;
+			case 7:
+				operation = "CPX";
+				valid = true;
+			break;
+		}
+	}
+	bool standardInstruction = false;
+		switch(opcode){
+			//Single Byte Instructions
+			default:
+				standardInstruction = true;
+			break;
+			case 0x08:
+				valid=true; operation="PHP";
+			break;
+			case 0x28:
+				valid=true; operation="PLP";
+			break;
+			case 0x48:
+				valid=true; operation="PHA";
+			break;
+			case 0x68:
+				valid=true; operation="PLA";
+			break;
+			case 0x88:
+				valid=true; operation="DEY";
+			break;
+			case 0xA8:
+				valid=true; operation="TAY";
+			break;
+			case 0xC8:
+				valid=true; operation="INY";
+			break;
+			case 0xE8:
+				valid=true; operation="INX";
+			break;
+			case 0x18:
+				valid=true; operation="CLC";
+			break;
+			case 0x38:
+				valid=true; operation="SEC";
+			break;
+			case 0x58:
+				valid=true; operation="CLI";
+			break;
+			case 0x78:
+				valid=true; operation="SEI";
+			break;
+			case 0x98:
+				valid=true; operation="TYA";
+			break;
+			case 0xb8:
+				valid=true; operation="CLV";
+			break;
+			case 0xD8:
+				valid=true; operation="CLD";
+			break;
+			case 0xF8:
+				valid=true; operation="SED";
+			break;
+			
+			case 0x8a:
+				valid=true; operation="TXA";
+			break;
+			case 0x9a:
+				valid=true; operation="TXS";
+			break;
+			case 0xaa:
+				valid=true; operation="TAX";
+			break;
+			case 0xba:
+				valid=true; operation="TSX";
+			break;
+			case 0xca:
+				valid=true; operation="DEX";
+			break;
+			case 0xea:
+				valid=true; operation="NOP";
+			break;
+			
+			
+			//Branch on - instructions
+			
+			case 0x10:
+				valid=true; operation="BPL";
+			break;
+			case 0x30:
+				valid=true; operation="BMI";
+			break;
+			case 0x50:
+				valid=true; operation="BVC";
+			break;
+			case 0x70:
+				valid=true; operation="BVS";
+			break;
+			case 0x90:
+				valid=true; operation="BCC";
+			break;
+			case 0xb0:
+				valid=true; operation="BCS";
+			break;
+			case 0xd0:
+				valid=true; operation="BNE";
+			break;
+			case 0xf0:
+				valid=true; operation="BEQ";
+			break;
+			
+			//Other instructions
+			
+			case 0x00:
+				valid=true; operation="BRK"; addressmode="";
+			break;
+			case 0x20:
+				valid=true; operation="JSRa";
+			break;
+			case 0x40:
+				valid=true; operation="RTI";
+			break;
+			case 0x60:
+				valid=true; operation="RTS";
+			break;
+		}
+	
+	if(standardInstruction == false || valid == false)
+	{
+		//addressmode = "";
+	}	
+	
+	
+	
+	
+	//ADDRESSING MODES - Gives both a decoded address and a value to work with, methods use whichever they need.
+	byte firstByte, secondByte;
+	int opAddress;
+	int operand;
+	
+	//Grab the first and second byte after the operation, we may only need one, or none. Remember most significant byte last
+	firstByte = readMem(getPC()+1);
+	secondByte = readMem(getPC()+2);
+	if(addressmode == "immediate"){ //Immediate uses the next byte as a direct data argument
+			//operand = readNext();
+			incPC();
+			opAddress = getPC();
+			
+	}else if (addressmode == "absolute"){ //Absolute is an explicit definition of the location in memory to use
+		//firstByte = readNext();
+		//secondByte = readNext();
+		//operand = toAddress(firstByte, secondByte);
+		incPC();
+		incPC();
+		opAddress = toAddress(firstByte, secondByte);
+		
+	} else if (addressmode == "zeropage") { //Zero Page is absolute but only for the first 256 bits of memory (0x0000 - 0x00ff)
+		//firstByte = readNext();
+		//operand = toAddress(firstByte, 0);
+		incPC();
+		opAddress = toAddress(firstByte,0);
+	
+	} else if (addressmode == "accumulator") { //Targets the accumulator
+		//operand = getA();
+		incPC();
+	} else if (addressmode == "absolute,x") { //Absolute value added to the X register
+		//firstByte = readNext();
+		//secondByte = readNext();
+		//operand = readMem(toAddress(firstByte, secondByte) + getX());
+		incPC();
+		incPC();
+		opAddress = toAddress(firstByte,secondByte)+getX();
+		
+	} else if (addressmode == "absolute,y") { //Absolute value added to the Y register
+		//firstByte = readNext();
+		//secondByte = readNext();
+		//operand = readMem(toAddress(firstByte, secondByte) + getY());
+		incPC();
+		incPC();
+		opAddress = toAddress(firstByte,secondByte)+getY();
+		
+	} else if (addressmode == "zeropage,x") { 
+		//firstByte = readNext();
+		//operand = readMem(toAddress(firstByte, 0)+getX());
+		incPC();
+		opAddress = toAddress(firstByte,0)+getX();
+		
+	} else if (addressmode == "(zeropage,x)") {
+		firstByte = readNext();
+		byte tempAddress = firstByte+getX();
+		
+		if(tempAddress > 0xFF)
+			tempAddress-=0xFF;
+		byte tempAddress2 = tempAddress+1;
+		if(tempAddress2 > 0xFF)
+			tempAddress-=0xFF;
+		
+		//DEBUG	
+		//cout << (int)tempAddress << endl;
+		//cout << (int)tempAddress2 << endl;
+		//cout << toAddress(readMem(tempAddress), readMem(tempAddress2));
+		//cout << (int)readMem(toAddress(readMem(tempAddress), readMem(tempAddress2))) <<endl;
+		opAddress = toAddress(readMem(tempAddress), readMem(tempAddress2));
+		
+	} else if (addressmode == "(zeropage),y") {
+		firstByte = readNext(); //start address
+		byte firstAddress = readMem(firstByte, 0);
+		byte secondAddress = readMem(firstByte+1, 0);
+		
+		//DEBUG
+		//cout << (int)firstAddress << endl;
+		//cout << (int)secondAddress << endl;
+
+		operand = readMem(toAddress(firstAddress, secondAddress)+getY());
+	} else {
+		//firstByte = -1;
+		//secondByte = -1;
+		//operand = -1;
+	}
+	operand = readMem(opAddress);
+	
+	
+	//TODO add instructions.
+	//INSTRUCTION
+	if (operation == "LDA") { //LDA loads A with its argument
+		setA(operand);
+	} else if (operation == "STA"){ //Copies A to a memory location
+		writeMem(opAddress,getA());
+	}
+	else if (operation == "JMPa") { //Jump absolute
+		//setPC(operand);
+	} else if (operation == "JMP") { //Jump Indirect
+		addressmode = "indirect";
+		firstByte=readNext();
+		secondByte=readNext();
+		int indirectAddress = toAddress(firstByte,secondByte);
+		operand=toAddress(indirectAddress, indirectAddress+1);
+		setPC(operand);
+		
+		//TOTDO setPC(toAddress(readMem(toAddress(firstByte, secondByte)), readMem(toAddress(firstByte, secondByte)+1)));
+		//setPC(operand);
+	} else if(operation == "BPL" || operation == "BCS" || operation == "BEQ" || operation == "BCC" || operation == "BNE" || operation == "BVC" || operation == "BVS" || operation == "BMI"){
+		//DEBUG: TODO FIX THIS: BRANCH ON
+		incPC();
+	} else if(operation == "JSRa"){
+		//TODO FIX
+		incPC();
+		incPC();
 	}
 	
-	if(!valid)
-		std::cout << "Unsupported OPcode " << (int)opcode << " at address " << address << ". Skipping..." << std::endl;
-	else
-		std::cout << "Executed " << operation << " " << addressmode<< " (" << (int)opcode << ") at address " << address << "." << std::endl;
 	
+		
+	
+	//DEBUG
+	if(!valid)
+		cout << "Unsupported OPcode " << hex << (int)opcode << " at address " << hex << address << ". Skipping..." << endl;
+	else
+	{
+		if(opcode>0){
+			cout << hex << address << ":\t\t" << operation << " " << hex << (int)opcode << "\t\t";
+			//if(addressmode == "implied")
+				//cout << "(impl)\t\t"<<endl;
+			//else
+			//{
+				cout << addressmode << "\t\t" << hex << (int)opAddress << "\t\t" << (int)operand << "\t\t";
+				cout << hex << (int)firstByte << "\t\t" << hex << (int)secondByte << endl;
+			//}
+			//cout << "Executed " <<operation << " " << addressmode<< " (" << hex << (int)opcode << ") at address " << hex << address << ". Operand: " << hex <<(int)firstByte << "->"<< hex <<(int)secondByte<<"->>>"<< hex <<(int)operand << endl;
+	
+		}
+	}
 }
+
+void execute(string operation, string addressmode, int memoryLocation)
+{
+	//Will migrate execution code here after the next backup
+}
+
+
+//Converts a 0xAA, 0xBB into a 0xBBAA Little Eidiean address
+int CPU::toAddress(byte firstByte, byte secondByte){
+	return firstByte | (secondByte << 8);
+}
+
 
 /*Some OPCodes require a certain number of cycles to pass to complete the operation.
  *Theoretically the operation candbe completed on the same cycle, so we wait for the
  *operation to 'complete' before accepting other operation. Wasted CPU cycles but
  *its the best I can think of right now.	*/		
 void CPU::waitForCycles(short toWait){
-	cycleWait = toWait;
+	cycleWait += toWait;
 }	
 //Boolean to check if the program is waiting to complete an operation.	
 bool CPU::sleeping(){
-	if(cycleWait>0)
+	if(cycleWait>0){
+		cycleWait--;
 		return true;
+	}
 	else
 		return false;
-}	
+}
 
-//---GET & SET---//
+//Resets the counter for waiting, useful for resetting and possibly interrupts
+void CPU::wake(){
+	cycleWait=0;
+}
+
+//---GET & SET METHODS---//
 
 //Load accumulator with i
 void CPU::setA(byte i){

@@ -14,16 +14,17 @@ CPU nesCPU;
 //APU nesAPU;
 Cartridge* cart;
 
-std::string game = "../res/mario.nes";
+std::string game = "../res/dk.nes";
 
 System::System(){
 	cart = new Cartridge(game, nesCPU);
 	init();	
-	run();
+	run();	
 }
 
-int main(){
+int main2(){
 	System nes; //Creates an instance of the system, starting the program.
+	//nes.run();
 	return 0;
 }	
 
@@ -33,6 +34,7 @@ void System::init(){
 	setPowerState(true);
 }
 void System::run(){
+	
 	while(nesCPU.running && getPowerState()){
 		tick();
 	}	
@@ -40,6 +42,10 @@ void System::run(){
 void System::tick(){
 	nesCPU.cycle();
 	tickCount++;
+}
+
+CPU System::getCPU(){
+	return nesCPU;
 }
 
 void System::setPowerState(bool state){
