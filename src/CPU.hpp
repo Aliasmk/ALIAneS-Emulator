@@ -51,6 +51,7 @@ class CPU {
 		void waitForCycles(short toWait);		
 		bool sleeping();
 		void wake();
+		void execute(std::string operation, std::string addressmode);
 		
 		int toAddress(byte firstByte, byte secondByte);
 		

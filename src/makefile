@@ -4,3 +4,6 @@ all:
 	
 run:
 	../bin/System
+
+debug:
+	gdb-apple ../bin/System
