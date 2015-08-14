@@ -447,6 +447,25 @@ void CPU::decodeAt(int address){
 	
 	
 	
+	
+
+	
+	//DEBUG
+	cout << hex << address << ":";
+	if(!valid)
+		cout << setw(spacing) << "UKN" << hex << (int)opcode;
+	else {
+		cout << setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
+	}
+	execute(operation, addressmode);
+	cout << endl;
+	
+}
+
+void CPU::execute(string operation, string addressmode)
+{
+	//Will migrate execution code here after the next backup
+	
 	//ADDRESSING MODES - Gives both a decoded address and a value to work with, methods use whichever they need.
 	byte firstByte, secondByte;
 	int opAddress = 0;
@@ -562,23 +581,8 @@ void CPU::decodeAt(int address){
 		incPC();
 	}
 	
-	
-	//DEBUG
-	cout << hex << address << ":";
-	if(!valid)
-		cout << setw(spacing) << "UKN" << hex << (int)opcode;
-	else {
-		cout << setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
-		if(addressmode != "implied" && addressmode != "accumulator")
+	if(addressmode != "implied" && addressmode != "accumulator")
 			cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
-	}
-	cout << endl;
-	
-}
-
-void execute(string operation, string addressmode)
-{
-	//Will migrate execution code here after the next backup
 }
 
 
