@@ -6,11 +6,73 @@
  */
 
 #include "CPU.hpp"
+#include <bitset>
 
 //Define "byte" to be a bitset of 8
 typedef uint8_t byte;
 
 using namespace std;
+
+
+
+void CPU::setP(byte add){
+	//1:10010101
+	//2:01001001
+	//R:11011101
+	
+	//OR Orig with args
+	
+	//1:10010101
+	//2:01001001
+	//OR 1,2
+	//3:11011101
+	cout << "Set Procstat with " << hex << add << " " << bitset<8>(add) << ", before: " << bitset<8>(p) << endl;
+	p = p | add;
+	cout << "Procstat after: " << bitset<8>(p) << endl;
+}
+
+void CPU::clearP(byte sub){
+	
+	cout << "clear Procstat with " << hex << sub << " " << bitset<8>(sub) << ", before: " << bitset<8>(p) << endl;
+	sub = ~sub;
+	p = p & sub;
+	cout << "Procstat after: " << bitset<8>(p) << endl;
+
+	//1:01001001
+	//2:01101010
+	//R:00000001
+	
+	//Invert Search Arg, then AND the Orig arg with the inverted search
+	
+	//1:01001001
+	//2:01101010
+	//Invert 2:
+	//3:10010101
+	
+	//1:01001001
+	//3:10010101
+	//AND 1,3
+	//4:00000001
+}
+
+bool CPU::checkP(byte chk){
+	//1:01001001
+	//2:01000000
+//AND  :01000000 = original chk
+
+	//1:01001001
+	//2:00100000
+//AND  :00000000
+
+	if((p&chk) == chk)
+		return true;
+	else
+		return false;
+
+
+}
+
+
 
 int spacing = 15;
 
@@ -21,6 +83,8 @@ CPU::CPU(){}
 void CPU::start(){
 	//Initialize Register Values
 	setP(0x34);
+	clearP(UNUSED);
+	setP(UNUSED);
 	setA(0);
 	setX(0);
 	setY(0);
@@ -641,9 +705,7 @@ void CPU::setS(byte i){
 	s = i;
 }
 //Set status flags as i
-void CPU::setP(byte i){
-	p = i;
-}
+//TODO add methods
 
 //Returns value in the accumulator
 byte CPU::getA(){
