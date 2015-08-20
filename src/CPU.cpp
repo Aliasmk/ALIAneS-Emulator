@@ -619,14 +619,59 @@ void CPU::execute(string operation, string addressmode)
 	
 	//TODO add instructions.
 	//INSTRUCTION
-	if (operation == "LDA") { //LDA loads A with its argument
-		setA(operand);
-	} else if (operation == "STA"){ //Copies A to a memory location
-		writeMem(opAddress,getA());
-	}
-	else if (operation == "JMPa") { //Jump absolute
-		//setPC(operand);
-	} else if (operation == "JMP") { //Jump Indirect
+	if(operation == "ADC"){
+	
+	} else if(operation == "AND") {
+	
+	} else if(operation == "ASL") {
+	
+	} else if(operation == "BIT") {
+	
+	} else if(operation == "BPL") { //BRANCH \/
+		incPC();
+	} else if(operation == "BMI") {
+		incPC();
+	} else if(operation == "BVC") {
+		incPC();
+	} else if(operation == "BVS") {
+		incPC();
+	} else if(operation == "BCC") {
+		incPC();
+	} else if(operation == "BCS") {
+		incPC();
+	} else if(operation == "BNE") {
+		incPC();
+	} else if(operation == "BEQ") { //BRANCH /\
+	
+	} else if(operation == "BRK") {
+	
+	} else if(operation == "CMP") {
+	
+	} else if(operation == "CPX") {
+	
+	} else if(operation == "CPY") {
+	
+	} else if(operation == "DEC") {
+	
+	} else if(operation == "EOR") {
+	
+	} else if(operation == "CLC") {
+	
+	} else if(operation == "SEC") {
+	
+	} else if(operation == "CLI") {
+	
+	} else if(operation == "SEI") {
+	
+	} else if(operation == "CLV") {
+	
+	} else if(operation == "CLD") {
+	
+	} else if(operation == "SED") {
+	
+	} else if(operation == "INC") {
+	
+	} else if(operation == "JMP") { //Jump
 		addressmode = "indirect";
 		firstByte=readNext();
 		secondByte=readNext();
@@ -636,13 +681,72 @@ void CPU::execute(string operation, string addressmode)
 		
 		//TOTDO setPC(toAddress(readMem(toAddress(firstByte, secondByte)), readMem(toAddress(firstByte, secondByte)+1)));
 		//setPC(operand);
-	} else if(operation == "BPL" || operation == "BCS" || operation == "BEQ" || operation == "BCC" || operation == "BNE" || operation == "BVC" || operation == "BVS" || operation == "BMI"){
-		//DEBUG: TODO FIX THIS: BRANCH ON
-		incPC();
-	} else if(operation == "JSRa"){
+	} else if(operation == "JMPa") {
+		//setPC(operand);
+	} else if(operation == "AND") {
+	
+	} else if(operation == "JSR") {
+	
+	} else if(operation == "JSRa") {
 		//TODO FIX
 		incPC();
 		incPC();
+	} else if(operation == "LDA") { //Load A
+		setA(operand);
+	} else if(operation == "LDX") {
+	
+	} else if(operation == "LDY") {
+	
+	} else if(operation == "LSR") {
+	
+	} else if(operation == "NOP") {
+	
+	} else if(operation == "ORA") {
+	
+	} else if(operation == "TAX") {
+	
+	} else if(operation == "TXA") {
+	
+	} else if(operation == "DEX") {
+	
+	} else if(operation == "INX") {
+	
+	} else if(operation == "TAY") {
+
+	} else if(operation == "TYA") {
+	
+	} else if(operation == "DEY") {	
+	
+	} else if(operation == "INY") {
+	
+	} else if(operation == "ROL") {
+	
+	} else if(operation == "ROR") {
+	
+	} else if(operation == "RTI") {
+	
+	} else if(operation == "RTS") {
+	
+	} else if(operation == "SBC") {
+	
+	} else if(operation == "STA") { //Store A
+		writeMem(opAddress,getA());
+	} else if(operation == "TXS") {
+	
+	} else if(operation == "TSX") {
+	
+	} else if(operation == "PHA") {
+	
+	} else if(operation == "PLA") {
+	
+	} else if(operation == "PHP") {
+	
+	} else if(operation == "PLP") {
+	
+	} else if(operation == "STX") {
+	
+	} else if(operation == "STY") {
+	
 	}
 	
 	if(addressmode != "implied" && addressmode != "accumulator")
