@@ -65,13 +65,27 @@ int main()
 					cin >> hex >> iInput;
 					cout << hex << (int)nesCPU->readMem(iInput) << endl;
 					
-				} else if(command == "decode" || command == "execute"){
+				} else if(command == "decode"){
 					command = "";
 					cout << "<address> $ ";
 					int iInput;
 					cin >> hex >> iInput;
 					nesCPU->decodeAt(iInput);
 					nesCPU->incPC();
+					
+				} else if(command == "execute"){
+					command = "";
+					int previousPC = nesCPU->getPC();
+					cout << "<command> <addressmode> <writeto1> <writeto2>$";
+					string sInput1, sInput2;
+					int iInput1, iInput2;
+					cin >> sInput1 >> sInput2 >> iInput1 >> iInput2;
+					
+					nesCPU->writeMem(previousPC+1, iInput1);
+					nesCPU->writeMem(previousPC+2, iInput2);
+					
+					nesCPU->execute(sInput1, sInput2);
+				
 				} else if(command == "setpc") {
 					command = "";
 					cout << "<address> $ ";

@@ -15,62 +15,6 @@ using namespace std;
 
 
 
-void CPU::setP(byte add){
-	//1:10010101
-	//2:01001001
-	//R:11011101
-	
-	//OR Orig with args
-	
-	//1:10010101
-	//2:01001001
-	//OR 1,2
-	//3:11011101
-	cout << "Set Procstat with " << hex << add << " " << bitset<8>(add) << ", before: " << bitset<8>(p) << endl;
-	p = p | add;
-	cout << "Procstat after: " << bitset<8>(p) << endl;
-}
-
-void CPU::clearP(byte sub){
-	
-	cout << "clear Procstat with " << hex << sub << " " << bitset<8>(sub) << ", before: " << bitset<8>(p) << endl;
-	sub = ~sub;
-	p = p & sub;
-	cout << "Procstat after: " << bitset<8>(p) << endl;
-
-	//1:01001001
-	//2:01101010
-	//R:00000001
-	
-	//Invert Search Arg, then AND the Orig arg with the inverted search
-	
-	//1:01001001
-	//2:01101010
-	//Invert 2:
-	//3:10010101
-	
-	//1:01001001
-	//3:10010101
-	//AND 1,3
-	//4:00000001
-}
-
-bool CPU::checkP(byte chk){
-	//1:01001001
-	//2:01000000
-//AND  :01000000 = original chk
-
-	//1:01001001
-	//2:00100000
-//AND  :00000000
-
-	if((p&chk) == chk)
-		return true;
-	else
-		return false;
-
-
-}
 
 
 
@@ -463,28 +407,28 @@ void CPU::decodeAt(int address){
 			//Branch on - instructions
 			
 			case 0x10:
-				valid=true; operation="BPL";
+				valid=true; operation="BPL"; addressmode = "immediate";
 			break;
 			case 0x30:
-				valid=true; operation="BMI";
+				valid=true; operation="BMI"; addressmode  = "immediate";
 			break;
 			case 0x50:
-				valid=true; operation="BVC";
+				valid=true; operation="BVC"; addressmode = "immediate";
 			break;
 			case 0x70:
-				valid=true; operation="BVS";
+				valid=true; operation="BVS"; addressmode = "immediate";
 			break;
 			case 0x90:
-				valid=true; operation="BCC";
+				valid=true; operation="BCC"; addressmode = "immediate";
 			break;
 			case 0xb0:
-				valid=true; operation="BCS";
+				valid=true; operation="BCS"; addressmode = "immediate";
 			break;
 			case 0xd0:
-				valid=true; operation="BNE";
+				valid=true; operation="BNE"; addressmode = "immediate";
 			break;
 			case 0xf0:
-				valid=true; operation="BEQ";
+				valid=true; operation="BEQ"; addressmode = "immediate";
 			break;
 			
 			//Other instructions
@@ -615,36 +559,75 @@ void CPU::execute(string operation, string addressmode)
 		//operand = -1;
 	}
 	operand = readMem(opAddress);
-	
+	if(addressmode != "implied" && addressmode != "accumulator")
+			cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
+
 	
 	//TODO add instructions.
 	//INSTRUCTION
 	if(operation == "ADC"){
 	
-	} else if(operation == "AND") {
-	
-	} else if(operation == "ASL") {
-	
+	} else if(operation == "AND") { //Perform an AND with the read byte on the Accumulator. Uses: Value
+		//cout << endl << "AND: " << bitset<8>(getA());
+		//cout << endl << " ON: " << bitset<8>(operand);
+		
+		setA(getA()|operand);
+		
+		//cout << endl << "RES: " << bitset<8>(getA());
+		if(getA()==0)
+			setP(ZERO);
+		if((NEGATIVE|getA()) == NEGATIVE)
+			setP(NEGATIVE);
+	} else if(operation == "ASL") { //Perform a left shift on the accumulator, store old bit 7 in the carry flag
+		if((128&getA())==128)
+			setP(CARRY);
+		else
+			clearP(CARRY);
+		setA(getA()<1);
 	} else if(operation == "BIT") {
 	
-	} else if(operation == "BPL") { //BRANCH \/
-		incPC();
-	} else if(operation == "BMI") {
-		incPC();
-	} else if(operation == "BVC") {
-		incPC();
-	} else if(operation == "BVS") {
-		incPC();
-	} else if(operation == "BCC") {
-		incPC();
-	} else if(operation == "BCS") {
-		incPC();
-	} else if(operation == "BNE") {
-		incPC();
-	} else if(operation == "BEQ") { //BRANCH /\
-	
+	} else if(operation == "BPL") { //Branch if Positive BRANCH \/
+		//incPC();
+		//incPC();
+		if(!checkP(NEGATIVE))
+			setPC(getPC()+toSInt(operand));
+	} else if(operation == "BMI") { //Branch if Minus
+		//incPC();
+		//incPC();
+		if(checkP(NEGATIVE))
+			setPC(getPC()+toSInt(operand));
+	} else if(operation == "BVC") { //Branch on Overflow Clear
+		//incPC();
+		//incPC();
+		if(!checkP(OVERFLOW))
+			setPC(getPC()+toSInt(operand));
+	} else if(operation == "BVS") { //Branch on Overflow Set
+		//incPC();
+		//incPC();
+		if(checkP(OVERFLOW))
+			setPC(getPC()+toSInt(operand));
+	} else if(operation == "BCC") { //Branch if Carry Clear
+		//incPC();
+		//incPC();
+		if(!checkP(CARRY))
+			setPC(getPC()+toSInt(operand));
+	} else if(operation == "BCS") { //Branch if Carry Set
+		//incPC();
+		//incPC();
+		if(checkP(CARRY))
+			setPC(getPC()+toSInt(operand));	
+	} else if(operation == "BNE") { //Branch if Not Equal (Zero Clear)
+		//incPC();
+		//incPC();
+		if(!checkP(ZERO))
+			setPC(getPC()+toSInt(operand));
+	} else if(operation == "BEQ") { //Branch if Equal (Zero Set) BRANCH 
+		//incPC();
+		//incPC();
+		if(checkP(ZERO))
+			setPC(getPC()+toSInt(operand));
 	} else if(operation == "BRK") {
-	
+		
 	} else if(operation == "CMP") {
 	
 	} else if(operation == "CPX") {
@@ -655,20 +638,20 @@ void CPU::execute(string operation, string addressmode)
 	
 	} else if(operation == "EOR") {
 	
-	} else if(operation == "CLC") {
-	
-	} else if(operation == "SEC") {
-	
-	} else if(operation == "CLI") {
-	
-	} else if(operation == "SEI") {
-	
-	} else if(operation == "CLV") {
-	
-	} else if(operation == "CLD") {
-	
+	} else if(operation == "CLC") { //Clear Carry
+		clearP(CARRY);
+	} else if(operation == "SEC") { //Set Carry
+		setP(CARRY);
+	} else if(operation == "CLI") { //Clear Interrupt
+		clearP(INTERRUPT);
+	} else if(operation == "SEI") { //Set Interrupt
+		setP(INTERRUPT);
+	} else if(operation == "CLV") { //Clear Overflow
+		clearP(OVERFLOW);
+	} else if(operation == "CLD") { //Clear Decimal
+		clearP(DECIMAL);
 	} else if(operation == "SED") {
-	
+		setP(DECIMAL);
 	} else if(operation == "INC") {
 	
 	} else if(operation == "JMP") { //Jump
@@ -749,8 +732,6 @@ void CPU::execute(string operation, string addressmode)
 	
 	}
 	
-	if(addressmode != "implied" && addressmode != "accumulator")
-			cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
 }
 
 
@@ -782,6 +763,20 @@ void CPU::wake(){
 	cycleWait=0;
 }
 
+//Transforms a byte into an signed integer
+signed char CPU::toSInt(byte input)
+{
+	signed char out = 0;
+	//cout << endl << hex << bitset<8>(input) << " to int = " ;
+	if((input&0x80)==0x80)
+		out = -(~input+1); //Two's Complement
+	else
+		out = (input&0x7F);
+	
+	//cout << bitset<8>(out) << endl;
+	return out; 
+}
+
 //---GET & SET METHODS---//
 
 //Load accumulator with i
@@ -808,8 +803,64 @@ void CPU::incPC(){
 void CPU::setS(byte i){
 	s = i;
 }
-//Set status flags as i
-//TODO add methods
+//Set and clear status flags 
+void CPU::setP(byte add){
+	//1:10010101
+	//2:01001001
+	//R:11011101
+	
+	//OR Orig with args
+	
+	//1:10010101
+	//2:01001001
+	//OR 1,2
+	//3:11011101
+	//cout << endl << "Set Procstat with " << hex << (int)add << " " << bitset<8>(add) << ", before: " << bitset<8>(p) << endl;
+	p = p | add;
+	//cout << endl<< "Procstat after: " << bitset<8>(p) << endl;
+}
+
+void CPU::clearP(byte sub){
+	
+	//cout << "clear Procstat with " << hex << (int)sub << " " << bitset<8>(sub) << ", before: " << bitset<8>(p) << endl;
+	sub = ~sub;
+	p = p & sub;
+	//cout << "Procstat after: " << bitset<8>(p) << endl;
+
+	//1:01001001
+	//2:01101010
+	//R:00000001
+	
+	//Invert Search Arg, then AND the Orig arg with the inverted search
+	
+	//1:01001001
+	//2:01101010
+	//Invert 2:
+	//3:10010101
+	
+	//1:01001001
+	//3:10010101
+	//AND 1,3
+	//4:00000001
+}
+
+bool CPU::checkP(byte chk){
+	//1:01001001
+	//2:01000000
+//AND  :01000000 = original chk
+
+	//1:01001001
+	//2:00100000
+//AND  :00000000
+
+	if((p&chk) == chk)
+		return true;
+	else
+		return false;
+
+
+}
+
 
 //Returns value in the accumulator
 byte CPU::getA(){

@@ -9,9 +9,10 @@
 #define	NESCPU
 
 #include <string>
-#include <cstdint>
+#include <stdint.h>
 #include <iostream>
 #include <iomanip>
+
 
 class CPU {
 	private:
@@ -20,12 +21,12 @@ class CPU {
 		enum statusReg {
 			CARRY = 1,	//
 			ZERO = 2,		//Set to 1 when any arithmetic or logical operation produces a zero result
-			INTERUPT = 4,	//If it is set, interrupts are disabled.
+			INTERRUPT = 4,	//If it is set, interrupts are disabled.
 			DECIMAL = 8,	//
 			BRK = 16,	//This is set when a software interrupt (BRK instruction) is executed.
 			UNUSED = 32,	//Not used. Supposed to be logical 1 at all times.
 			OVERFLOW = 64,//Set when an arithmetic operation produces a result too large to be represented in a byte
-			SIGN = 128	//this is set if the result of an operation is negative, cleared if positive.
+			NEGATIVE = 128	//this is set if the result of an operation is negative, cleared if positive.
 		};
 
 		
@@ -64,6 +65,7 @@ class CPU {
 		bool sleeping();
 		void wake();
 		void execute(std::string operation, std::string addressmode);
+		signed char toSInt(byte input);
 		
 		int toAddress(byte firstByte, byte secondByte);
 		
