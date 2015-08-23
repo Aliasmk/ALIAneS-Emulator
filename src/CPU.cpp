@@ -78,7 +78,7 @@ void CPU::stop(string reason){
 //TODO: remove this var and the 20000 cycle code in cycle() (temporary)
 int inc = 0;
 void CPU::cycle(){
-	if(inc<25)
+	if(inc<100)
 	{
 		if(!sleeping()){
 			decodeAt(getPC());
@@ -86,7 +86,7 @@ void CPU::cycle(){
 		}
 	}
 	else
-		stop("Finished 25 cycles");
+		stop("Finished 100 cycles");
 		
 	inc++;
 }
