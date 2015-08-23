@@ -19,6 +19,7 @@ using namespace std;
 
 
 int spacing = 15;
+int startoverride = 0xc000;
 
 //Constructor which not used yet
 CPU::CPU(){}
@@ -48,8 +49,13 @@ void CPU::start(){
 
 	//Set the program counter to equal the reset vector, located at 0xFFFC
 	//Because the addressing in the 6502 is backwards, FFFC is concatenated to the end of 
-	//FFFD using bitwise shifts and ORs
-	setPC(toAddress(readMem(0xFFFC),readMem(0xFFFD)));
+	//FFFD using bitwise shifts and ORs. If the override is specified, set it to that (in
+	//the case of cpu only nestest for example)
+	
+	if(startoverride<0)
+		setPC(toAddress(readMem(0xFFFC),readMem(0xFFFD)));
+	else
+		setPC(startoverride);
 	
 	//This is a very long line to output a short amount of debug text
 	cout << "PC: "  <<setfill('0')<< setw(4)<<hex<< (int)getPC() << " reset vectors: " << setw(2)<<setfill('0') <<hex << (int)readMem(0xfffc) <<setw(2)<<setfill('0')<<hex<< (int)readMem(0xfffd)<<endl;
@@ -81,6 +87,7 @@ void CPU::cycle(){
 	if(inc<100)
 	{
 		if(!sleeping()){
+			
 			decodeAt(getPC());
 			incPC();
 		}
@@ -304,11 +311,11 @@ void CPU::decodeAt(int address){
 				valid = true;
 			break;
 			case 2:
-				operation = "JMP";
+				operation = "JMPa";
 				valid = true;
 			break;
 			case 3:
-				operation = "JMPa";
+				operation = "JMP";
 				valid = true;
 			break;
 			case 4:
@@ -584,8 +591,17 @@ void CPU::execute(string operation, string addressmode)
 		else
 			clearP(CARRY);
 		setA(getA()<1);
-	} else if(operation == "BIT") {
-	
+	} else if(operation == "BIT") { //Bit Test, set ZERO if none match. Then set OVERFLOW to memory bit 6 and NEGATIVE to memory bit 7
+		if((getA()&operand)==0)
+			setP(ZERO);
+		if((operand&getP())==OVERFLOW) //if bit 6 set in operand
+			setP(OVERFLOW);
+		else
+			clearP(OVERFLOW);
+		if((operand&getP())==NEGATIVE) //if bit 7 set in operand
+			setP(NEGATIVE);
+		else
+			clearP(NEGATIVE);
 	} else if(operation == "BPL") { //Branch if Positive BRANCH \/
 		//incPC();
 		//incPC();
@@ -650,7 +666,7 @@ void CPU::execute(string operation, string addressmode)
 		clearP(OVERFLOW);
 	} else if(operation == "CLD") { //Clear Decimal
 		clearP(DECIMAL);
-	} else if(operation == "SED") {
+	} else if(operation == "SED") { //Set Decimal
 		setP(DECIMAL);
 	} else if(operation == "INC") {
 	
@@ -664,8 +680,9 @@ void CPU::execute(string operation, string addressmode)
 		
 		//TOTDO setPC(toAddress(readMem(toAddress(firstByte, secondByte)), readMem(toAddress(firstByte, secondByte)+1)));
 		//setPC(operand);
-	} else if(operation == "JMPa") {
-		//setPC(operand);
+	} else if(operation == "JMPa") { //Jump Absolute
+		setPC(opAddress-1);
+		
 	} else if(operation == "AND") {
 	
 	} else if(operation == "JSR") {
@@ -676,34 +693,45 @@ void CPU::execute(string operation, string addressmode)
 		incPC();
 	} else if(operation == "LDA") { //Load A
 		setA(operand);
-	} else if(operation == "LDX") {
-	
-	} else if(operation == "LDY") {
-	
+		setFlags(operand);
+	} else if(operation == "LDX") { //Load X
+		setX(operand);
+		setFlags(operand);
+	} else if(operation == "LDY") { //Load Y
+		setY(operand);
+		setFlags(operand);
 	} else if(operation == "LSR") {
 	
-	} else if(operation == "NOP") {
+	} else if(operation == "NOP") { //No Operation
 	
 	} else if(operation == "ORA") {
 	
-	} else if(operation == "TAX") {
-	
-	} else if(operation == "TXA") {
-	
-	} else if(operation == "DEX") {
-	
-	} else if(operation == "INX") {
-	
-	} else if(operation == "TAY") {
-
-	} else if(operation == "TYA") {
-	
-	} else if(operation == "DEY") {	
-	
-	} else if(operation == "INY") {
-	
+	} else if(operation == "TAX") { //Transfer A to X
+		setX(getA());
+		setFlags(getX());
+	} else if(operation == "TXA") { //Transfer X to A
+		setA(getX());
+		setFlags(getA());
+	} else if(operation == "DEX") { //Decrement X
+		setX(getX()-1);
+		setFlags(getX());
+	} else if(operation == "INX") { //Increment X
+		setX(getX()+1);
+		setFlags(getX());
+	} else if(operation == "TAY") { //Transfer A to Y
+		setY(getA());
+		setFlags(getY());
+	} else if(operation == "TYA") { //Transfer Y to A
+		setA(getY());
+		setFlags(getY());
+	} else if(operation == "DEY") {	//Decrement Y
+		setY(getY()-1);
+		setFlags(getY());
+	} else if(operation == "INY") { //Increment Y
+		setY(getY()+1);
+		setFlags(getY());
 	} else if(operation == "ROL") {
-	
+		
 	} else if(operation == "ROR") {
 	
 	} else if(operation == "RTI") {
@@ -712,10 +740,10 @@ void CPU::execute(string operation, string addressmode)
 	
 	} else if(operation == "SBC") {
 	
-	} else if(operation == "STA") { //Store A
+	} else if(operation == "STA") { //Store A into Memory
 		writeMem(opAddress,getA());
 	} else if(operation == "TXS") {
-	
+		
 	} else if(operation == "TSX") {
 	
 	} else if(operation == "PHA") {
@@ -726,10 +754,10 @@ void CPU::execute(string operation, string addressmode)
 	
 	} else if(operation == "PLP") {
 	
-	} else if(operation == "STX") {
-	
-	} else if(operation == "STY") {
-	
+	} else if(operation == "STX") { //Store X into Memory
+		writeMem(opAddress,getX());
+	} else if(operation == "STY") {	//Store Y into Memory
+		writeMem(opAddress,getY());
 	}
 	
 }
@@ -843,7 +871,7 @@ void CPU::clearP(byte sub){
 	//AND 1,3
 	//4:00000001
 }
-
+ 
 bool CPU::checkP(byte chk){
 	//1:01001001
 	//2:01000000
@@ -857,9 +885,8 @@ bool CPU::checkP(byte chk){
 		return true;
 	else
 		return false;
-
-
 }
+
 
 
 //Returns value in the accumulator
@@ -885,4 +912,16 @@ byte CPU::getS(){
 //Returns all 8 bits of the 6 bit status 
 byte CPU::getP(){
 	return p;
+}
+
+void CPU::setFlags(byte operand){
+	if(operand == 0)
+		setP(ZERO);
+	else
+		clearP(ZERO);
+		
+	if((operand&NEGATIVE) == NEGATIVE)
+		setP(NEGATIVE);
+	else
+		clearP(NEGATIVE);
 }

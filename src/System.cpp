@@ -14,7 +14,7 @@ CPU nesCPU;
 //APU nesAPU;
 Cartridge* cart;
 
-std::string game = "../res/dk.nes";
+std::string game = "../res/nestest.nes";
 
 System::System(){
 	cart = new Cartridge(game, nesCPU);

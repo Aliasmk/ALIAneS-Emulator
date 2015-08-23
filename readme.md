@@ -11,7 +11,7 @@
 After a couple months of my computer being out of commission, plus a new co-op job, I haven't had much time to work on the project. But I've made some progress: the August shell update is my first major release in a couple months and it includes a new "front end" that can be used to run the emulator as normal, or in a test mode. In this test mode you can write to blank memory and execute at different locations.
 
 ###Testing the Emulator###
-First, download the latest version of the code and compile it. If you can use make and gcc, type `make` then `make run` to start. Otherwise compile as you would normally. Run the bin in a terminal. Typing `start` will search for a "dk.nes" file in the /res directory, you must supply this yourself. `Test` will initialize the CPU and allow you to `read` and `write` to memory, and either `decode` and execute an opcode at a location, or `exevute` an opcode, which will use the subsequent memory. `end` finishes this mode, or just type `quit` to end the program. Not much error checking for inputs has been implemented, so be careful.
+First, download the latest version of the code and compile it. If you can use make and gcc, type `make` then `make run` to start. Otherwise compile as you would normally. Run the bin in a terminal. Typing `start` will search for a "nestest.nes" file in the /res directory, you must supply this yourself. `Test` will initialize the CPU and allow you to `read` and `write` to memory, and either `decode` and execute an opcode at a location, or `execute` an opcode, which will use the subsequent memory. `end` finishes this mode, or just type `quit` to end the program. Not much error checking for inputs has been implemented, so be careful.
 
 ###Project Goals###
 

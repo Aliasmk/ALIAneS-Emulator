@@ -87,6 +87,7 @@ class CPU {
 		uint16_t getPC();
 		byte getS();
 		byte getP();
+		void setFlags(byte operand);
 	
 
 };
