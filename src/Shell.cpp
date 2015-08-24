@@ -92,9 +92,9 @@ int main()
 					int iInput;
 					cin >> hex >> iInput;
 					nesCPU->setPC(iInput);
-				} else if(command == "geta")
+				} else if(command == "info")
 				{
-					cout << hex << (int)nesCPU->getA() << endl;
+					nesCPU->printDebugStatus(nesCPU->getPC());
 				} 
 				
 				else if (command == "" || command == "quit" || command == "end") {}
