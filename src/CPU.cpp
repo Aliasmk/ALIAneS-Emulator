@@ -933,7 +933,6 @@ void CPU::setFlags(byte operand){
 		clearP(NEGATIVE);
 }
 
-
 //Pops the byte off the "bottom" of the stack, then increments the stack pointer.
 byte CPU::stackPop(){
 	byte temp = readMem(toAddress(getS(),0x01));
@@ -950,13 +949,6 @@ void CPU::stackPush(byte toPush){
 //Returns the value on the "bottom" of the stack, but does not change/remove it, and does not move the stack pointer.
 byte CPU::stackPeek(){
 	return readMem(toAddress(getS(),0x01));
-}
-
-//DEBUG
-void CPU::printDebugStatus(int address){
-	//cout << endl << address << ": " << hex << (int)readMem(address) << " " << hex << (int)readMem(address+1) << " " << hex << (int)readMem(address+2);
-	cout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS();
-	
 }
 
 
