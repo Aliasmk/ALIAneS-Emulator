@@ -407,7 +407,7 @@ void CPU::decodeAt(int address){
 				valid=true; operation="DEX";
 			break;
 			case 0xea:
-				valid=true; operation="NOP";
+				valid=true; operation="NOP"; addressmode = "";
 			break;
 			
 			
@@ -444,7 +444,7 @@ void CPU::decodeAt(int address){
 				valid=true; operation="BRK"; addressmode="";
 			break;
 			case 0x20:
-				valid=true; operation="JSRa";
+				valid=true; operation="JSR"; addressmode="absolute";
 			break;
 			case 0x40:
 				valid=true; operation="RTI";
@@ -566,9 +566,11 @@ void CPU::execute(string operation, string addressmode)
 		//operand = -1;
 	}
 	operand = readMem(opAddress);
-	if(addressmode != "implied" && addressmode != "accumulator")
-			cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
-
+	if(addressmode != "implied" && addressmode != "accumulator"){
+			
+			cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand; // << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
+			printDebugStatus(getPC());
+	}
 	
 	//TODO add instructions.
 	//INSTRUCTION
@@ -686,11 +688,12 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "AND") {
 	
 	} else if(operation == "JSR") {
-	
-	} else if(operation == "JSRa") {
-		//TODO FIX
-		incPC();
-		incPC();
+		byte firstPart, secondPart;
+		firstPart = (getPC()&0xF0)>4;
+		secondPart = (getPC()&0xF);
+		stackPush(secondPart);
+		stackPush(firstPart);
+		setPC(opAddress-1); 
 	} else if(operation == "LDA") { //Load A
 		setA(operand);
 		setFlags(operand);
@@ -742,18 +745,20 @@ void CPU::execute(string operation, string addressmode)
 	
 	} else if(operation == "STA") { //Store A into Memory
 		writeMem(opAddress,getA());
-	} else if(operation == "TXS") {
-		
-	} else if(operation == "TSX") {
-	
-	} else if(operation == "PHA") {
-	
-	} else if(operation == "PLA") {
-	
-	} else if(operation == "PHP") {
-	
-	} else if(operation == "PLP") {
-	
+	} else if(operation == "TXS") { //Transfer X register to Stack Register
+		setS(getX());
+	} else if(operation == "TSX") { //Transfer Stack Register to X
+		setX(getS());
+		setFlags(getX());
+	} else if(operation == "PHA") { //Push the accumulator on to the stack
+		stackPush(getA());
+	} else if(operation == "PLA") { //Pull the value from the stack into the Accumulator
+		setA(stackPop());
+		setFlags(getA());
+	} else if(operation == "PHP") { //Push the status flags onto the stack
+		stackPush(getP());
+	} else if(operation == "PLP") { //Pull the value from the stack into the status flags
+		setP(stackPop());
 	} else if(operation == "STX") { //Store X into Memory
 		writeMem(opAddress,getX());
 	} else if(operation == "STY") {	//Store Y into Memory
@@ -905,7 +910,9 @@ byte CPU::getY(){
 uint16_t CPU::getPC(){
 	return pc;
 }
-//Returns stack pointer location
+//Returns stack pointer location. Stack pointer is the first location of free space, starting from 0x0100 to 0x01FF.
+//Note, stack is hardcoded on page 0x01 so getS() = FF actually means 0x01FF.
+//Also, the 6502 Stack is descending, so the first byte of free space is FF.
 byte CPU::getS(){
 	return s;
 }
@@ -925,3 +932,29 @@ void CPU::setFlags(byte operand){
 	else
 		clearP(NEGATIVE);
 }
+
+//Pops the byte off the "bottom" of the stack, then increments the stack pointer.
+byte CPU::stackPop(){
+	byte temp = readMem(toAddress(getS(),0x01));
+	setS(getS()+1);
+	return temp;
+}
+
+//Pushs a value onto the "bottom" of the stack and decrements the stack pointer.
+void CPU::stackPush(byte toPush){
+	writeMem(toAddress(getS(),0x01), toPush);
+	setS(getS()-1);
+}
+
+//Returns the value on the "bottom" of the stack, but does not change/remove it, and does not move the stack pointer.
+byte CPU::stackPeek(){
+	return readMem(toAddress(getS(),0x01));
+}
+
+//DEBUG
+void CPU::printDebugStatus(int address){
+	//cout << endl << address << ": " << hex << (int)readMem(address) << " " << hex << (int)readMem(address+1) << " " << hex << (int)readMem(address+2);
+	cout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS();
+	
+}
+

@@ -88,7 +88,13 @@ class CPU {
 		byte getS();
 		byte getP();
 		void setFlags(byte operand);
-	
+		
+		//Stack functions
+		byte stackPop();
+		void stackPush(byte toPush);
+		byte stackPeek();
+		
+		void printDebugStatus(int address);
 
 };
 #endif
