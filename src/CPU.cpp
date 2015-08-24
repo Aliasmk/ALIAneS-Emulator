@@ -925,3 +925,10 @@ void CPU::setFlags(byte operand){
 	else
 		clearP(NEGATIVE);
 }
+
+//DEBUG
+void CPU::printDebugStatus(int address){
+	cout << endl << address << ": " << hex << (int)readMem(address) << " " << hex << (int)readMem(address+1) << " " << hex << (int)readMem(address+2);
+	cout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS() << endl;
+	
+}
