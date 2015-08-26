@@ -14,10 +14,6 @@ typedef uint8_t byte;
 using namespace std;
 
 
-
-
-
-
 int spacing = 15;
 int startoverride = 0xc000;
 
@@ -27,7 +23,7 @@ CPU::CPU(){}
 //Startup procedure for the CPU, following what is on NESDEV wiki
 void CPU::start(){
 	//Initialize Register Values
-	setP(0x34);
+	setP(0x24); //TODO change back to 0x34
 	clearP(UNUSED);
 	setP(UNUSED);
 	setA(0);
@@ -454,16 +450,11 @@ void CPU::decodeAt(int address){
 			break;
 		}
 	
-	if(standardInstruction == false || valid == false)
+	if(standardInstruction == false || valid == false) 
 	{
 		//addressmode = "";
 	}	
 	
-	
-	
-	
-	
-
 	
 	//DEBUG
 	cout << hex << address << ":";
@@ -587,20 +578,30 @@ void CPU::execute(string operation, string addressmode)
 			setP(ZERO);
 		if((NEGATIVE|getA()) == NEGATIVE)
 			setP(NEGATIVE);
-	} else if(operation == "ASL") { //Perform a left shift on the accumulator, store old bit 7 in the carry flag
-		if((128&getA())==128)
-			setP(CARRY);
+	} else if(operation == "ASL") { //Perform a left shift on the accumulator or memory, store old bit 7 in the carry flag
+		if(addressmode == "accumulator"){
+			if((128&getA())==128)
+				setP(CARRY);
+			else
+				clearP(CARRY);
+			setA(getA()<1);
+		}
 		else
-			clearP(CARRY);
-		setA(getA()<1);
+		{
+			if((128&operand)==128)
+				setP(CARRY);
+			else
+				clearP(CARRY);
+			writeMem(opAddress, readMem(opAddress)<1);
+		}
 	} else if(operation == "BIT") { //Bit Test, set ZERO if none match. Then set OVERFLOW to memory bit 6 and NEGATIVE to memory bit 7
 		if((getA()&operand)==0)
 			setP(ZERO);
-		if((operand&getP())==OVERFLOW) //if bit 6 set in operand
+		if((operand&0x40)==0x40) //if bit 6 set in operand
 			setP(OVERFLOW);
 		else
 			clearP(OVERFLOW);
-		if((operand&getP())==NEGATIVE) //if bit 7 set in operand
+		if((operand&0x80)==0x80) //if bit 7 set in operand
 			setP(NEGATIVE);
 		else
 			clearP(NEGATIVE);
@@ -684,10 +685,7 @@ void CPU::execute(string operation, string addressmode)
 		//setPC(operand);
 	} else if(operation == "JMPa") { //Jump Absolute
 		setPC(opAddress-1);
-		
-	} else if(operation == "AND") {
-	
-	} else if(operation == "JSR") {
+	} else if(operation == "JSR") { //Jump to Subroutine
 		byte firstPart, secondPart;
 		firstPart = (getPC()&0xF0)>4;
 		secondPart = (getPC()&0xF);
@@ -706,7 +704,7 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "LSR") {
 	
 	} else if(operation == "NOP") { //No Operation
-	
+		//Does nothing
 	} else if(operation == "ORA") {
 	
 	} else if(operation == "TAX") { //Transfer A to X
@@ -927,7 +925,7 @@ void CPU::setFlags(byte operand){
 	else
 		clearP(ZERO);
 		
-	if((operand&NEGATIVE) == NEGATIVE)
+	if((operand&0x80) == 0x80)
 		setP(NEGATIVE);
 	else
 		clearP(NEGATIVE);
@@ -944,13 +942,13 @@ byte CPU::stackPop(){
 void CPU::stackPush(byte toPush){
 	writeMem(toAddress(getS(),0x01), toPush);
 	setS(getS()-1);
+	
 }
 
 //Returns the value on the "bottom" of the stack, but does not change/remove it, and does not move the stack pointer.
 byte CPU::stackPeek(){
 	return readMem(toAddress(getS(),0x01));
 }
-
 
 //DEBUG
 void CPU::printDebugStatus(int address){
