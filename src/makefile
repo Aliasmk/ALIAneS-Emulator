@@ -7,3 +7,9 @@ run:
 
 debug:
 	gdb-apple ../bin/System
+	
+test:
+	g++ ../res/testcases.cpp -o ../bin/Test
+	
+runtest:
+	../bin/Test

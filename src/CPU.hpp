@@ -11,12 +11,14 @@
 #include <string>
 #include <stdint.h>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 
 
 class CPU {
 	private:
 		typedef std::uint8_t byte;
+		
 		
 		enum statusReg {
 			CARRY = 1,	//

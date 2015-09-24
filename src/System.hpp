@@ -14,6 +14,7 @@
 #include "CPU.hpp"
 
 
+
 class System {
 	private:
 		bool powerState;
@@ -22,6 +23,7 @@ class System {
 		int tickCount;
 	public: 
 		System();
+		System(std::string cart);
 
 		int main2();
 		

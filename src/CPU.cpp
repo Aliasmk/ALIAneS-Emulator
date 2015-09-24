@@ -15,7 +15,9 @@ using namespace std;
 
 
 int spacing = 15;
-int startoverride = 0xc000;
+int startoverride=0xc000;
+bool logging = true;
+ofstream lout;
 
 //Constructor which not used yet
 CPU::CPU(){}
@@ -41,23 +43,34 @@ void CPU::start(){
 	writeMem(0x4015,0x00);
 	writeMem(0x4000,0x400F,0x00);
 	running=true;
-	wake();
+	
+	if(startoverride==0)
+		setPC(toAddress(readMem(0xFFFC),readMem(0xFFFD)));
+	else
+		setPC(startoverride);
+	
+	
 
 	//Set the program counter to equal the reset vector, located at 0xFFFC
 	//Because the addressing in the 6502 is backwards, FFFC is concatenated to the end of 
 	//FFFD using bitwise shifts and ORs. If the override is specified, set it to that (in
 	//the case of cpu only nestest for example)
 	
-	if(startoverride<0)
-		setPC(toAddress(readMem(0xFFFC),readMem(0xFFFD)));
-	else
-		setPC(startoverride);
+	
+	if(logging)
+		lout.open("../res/logs/alianesLast.log");
 	
 	//This is a very long line to output a short amount of debug text
 	cout << "PC: "  <<setfill('0')<< setw(4)<<hex<< (int)getPC() << " reset vectors: " << setw(2)<<setfill('0') <<hex << (int)readMem(0xfffc) <<setw(2)<<setfill('0')<<hex<< (int)readMem(0xfffd)<<endl;
 	cout << "Startup: Completed"<<endl;
 	//DEBUG
+	if(logging)
+		cout << "Execution logging is enabled. This will drastically slow performance and should only be used for small scale debug." << endl;
 	cout << setfill (' ') << "Address" <<setw(spacing)<<"OPCode" <<setw(spacing) << "AddressMode" << setw(spacing) << "OpAddr" << setw(spacing) << "Operand" << setw(spacing) << "NextByte" << setw(spacing) << "ByteAfter" << endl;
+	
+	
+	
+	wake();
 	
 	//Tests go below:
 	
@@ -88,10 +101,14 @@ void CPU::cycle(){
 			incPC();
 		}
 	}
-	else
+	else{
 		stop("Finished 100 cycles");
+		if(logging)
+			lout.close();	
+	}
 		
 	inc++;
+	
 }
 
 //---MEMORY ACCESS---//
@@ -458,13 +475,19 @@ void CPU::decodeAt(int address){
 	
 	//DEBUG
 	cout << hex << address << ":";
+	if(logging)
+		lout << hex << address;
 	if(!valid)
 		cout << setw(spacing) << "UKN" << hex << (int)opcode;
 	else {
 		cout << setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
+		if(logging)
+			lout << setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
 	}
 	execute(operation, addressmode);
 	cout << endl;
+	if(logging)
+		lout << endl;
 	
 }
 
@@ -563,21 +586,19 @@ void CPU::execute(string operation, string addressmode)
 			printDebugStatus(getPC());
 	}
 	
-	//TODO add instructions.
-	//INSTRUCTION
-	if(operation == "ADC"){
+	
+	//INSTRUCTIONS
+	if(operation == "ADC"){ //TODO
+		
 	
 	} else if(operation == "AND") { //Perform an AND with the read byte on the Accumulator. Uses: Value
 		//cout << endl << "AND: " << bitset<8>(getA());
 		//cout << endl << " ON: " << bitset<8>(operand);
 		
 		setA(getA()|operand);
+		setFlags(getA());
 		
-		//cout << endl << "RES: " << bitset<8>(getA());
-		if(getA()==0)
-			setP(ZERO);
-		if((NEGATIVE|getA()) == NEGATIVE)
-			setP(NEGATIVE);
+		
 	} else if(operation == "ASL") { //Perform a left shift on the accumulator or memory, store old bit 7 in the carry flag
 		if(addressmode == "accumulator"){
 			if((128&getA())==128)
@@ -645,18 +666,43 @@ void CPU::execute(string operation, string addressmode)
 		//incPC();
 		if(checkP(ZERO))
 			setPC(getPC()+toSInt(operand));
-	} else if(operation == "BRK") {
+	} else if(operation == "BRK") { //Trigger software interrupt
+		byte firstPart, secondPart;
+		firstPart = (getPC()&0xF0)>4;
+		secondPart = (getPC()&0xF);
+		stackPush(secondPart);
+		stackPush(firstPart);
 		
-	} else if(operation == "CMP") {
+		stackPush(getP());
+		
+		setPC(toAddress(readMem(0xFFFe),readMem(0xFFFF)));
+		setP(BRK);
+	} else if(operation == "CMP") { //Compare (Accumulator)
+		
+		int temp = getA()-operand;
+		setFlags(temp);
+		if(temp >=0) //a>=operand
+			setP(CARRY);
+		
+	} else if(operation == "CPX") { //Compare X
+		int temp = getX()-operand;
+		setFlags(temp);
+		if(temp >=0) //a>=operand
+			setP(CARRY);
 	
-	} else if(operation == "CPX") {
+	} else if(operation == "CPY") { //Compare Y
+		int temp = getY()-operand;
+		setFlags(temp);
+		if(temp >=0) //a>=operand
+			setP(CARRY);
 	
-	} else if(operation == "CPY") {
-	
-	} else if(operation == "DEC") {
-	
-	} else if(operation == "EOR") {
-	
+	} else if(operation == "DEC") { //Decrement Memory
+		int result = operand - 1;
+		writeMem(opAddress, result);
+		setFlags(result);
+	} else if(operation == "EOR") { //Exclusive OR (XOR)
+		setA(getA()^operand);
+		setFlags(getA());
 	} else if(operation == "CLC") { //Clear Carry
 		clearP(CARRY);
 	} else if(operation == "SEC") { //Set Carry
@@ -671,8 +717,10 @@ void CPU::execute(string operation, string addressmode)
 		clearP(DECIMAL);
 	} else if(operation == "SED") { //Set Decimal
 		setP(DECIMAL);
-	} else if(operation == "INC") {
-	
+	} else if(operation == "INC") { //Increment Memory
+		int result = operand + 1;
+		writeMem(opAddress, result);
+		setFlags(result);
 	} else if(operation == "JMP") { //Jump
 		addressmode = "indirect";
 		firstByte=readNext();
@@ -701,7 +749,7 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "LDY") { //Load Y
 		setY(operand);
 		setFlags(operand);
-	} else if(operation == "LSR") {
+	} else if(operation == "LSR") { //TODO
 	
 	} else if(operation == "NOP") { //No Operation
 		//Does nothing
@@ -731,13 +779,21 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "INY") { //Increment Y
 		setY(getY()+1);
 		setFlags(getY());
-	} else if(operation == "ROL") {
+	} else if(operation == "ROL") { //TODO
 		
-	} else if(operation == "ROR") {
+	} else if(operation == "ROR") { //TODO
 	
-	} else if(operation == "RTI") {
-	
-	} else if(operation == "RTS") {
+	} else if(operation == "RTI") { //Return from Interrupt 
+		setP(0);
+		setP(stackPull());
+		int firstPart = stackPull();
+		int secondPart = stackPull();
+		setPC(toAddress(firstPart,secondPart));
+	} else if(operation == "RTS") {	//TODO
+		int firstPart = stackPull();
+		int secondPart = stackPull();
+		int address = toAddress(firstPart,secondPart)-1
+		setPC(address);
 	
 	} else if(operation == "SBC") {
 	
@@ -954,5 +1010,5 @@ byte CPU::stackPeek(){
 void CPU::printDebugStatus(int address){
 	//cout << endl << address << ": " << hex << (int)readMem(address) << " " << hex << (int)readMem(address+1) << " " << hex << (int)readMem(address+2);
 	cout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS();
-	
+	lout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS();
 }

@@ -3,3 +3,4 @@ res/dk.nes
 res/zelda.nes
 */*.gch
 res/zelda.sav
+related_nosync/*

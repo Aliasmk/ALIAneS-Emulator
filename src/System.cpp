@@ -9,12 +9,14 @@
 #include "CPU.hpp"
 #include "Cartridge.hpp"
 
+using namespace std;
+
 CPU nesCPU;
 //PPU nesPPU;
 //APU nesAPU;
 Cartridge* cart;
 
-std::string game = "../res/nestest.nes";
+string game = "../res/nestest.nes";
 
 System::System(){
 	cart = new Cartridge(game, nesCPU);
@@ -22,7 +24,13 @@ System::System(){
 	run();	
 }
 
-int main2(){
+System::System(string customCart){
+	cart = new Cartridge(customCart, nesCPU);
+	init();	
+	run();	
+}
+
+int main2(){ //Was Main before the Shell was implemented
 	System nes; //Creates an instance of the system, starting the program.
 	//nes.run();
 	return 0;
