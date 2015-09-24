@@ -785,17 +785,16 @@ void CPU::execute(string operation, string addressmode)
 	
 	} else if(operation == "RTI") { //Return from Interrupt 
 		setP(0);
-		setP(stackPull());
-		int firstPart = stackPull();
-		int secondPart = stackPull();
+		setP(stackPop());
+		int firstPart = stackPop();
+		int secondPart = stackPop();
 		setPC(toAddress(firstPart,secondPart));
-	} else if(operation == "RTS") {	//TODO
-		int firstPart = stackPull();
-		int secondPart = stackPull();
-		int address = toAddress(firstPart,secondPart)-1
+	} else if(operation == "RTS") {	//Return from Subroutine
+		int firstPart = stackPop();
+		int secondPart = stackPop();
+		int address = toAddress(firstPart,secondPart)-1;
 		setPC(address);
-	
-	} else if(operation == "SBC") {
+	} else if(operation == "SBC") { //TODO
 	
 	} else if(operation == "STA") { //Store A into Memory
 		writeMem(opAddress,getA());
