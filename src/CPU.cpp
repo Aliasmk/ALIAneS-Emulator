@@ -588,8 +588,22 @@ void CPU::execute(string operation, string addressmode)
 	
 	
 	//INSTRUCTIONS
-	if(operation == "ADC"){ //TODO
+	if(operation == "ADC"){ //Add with Carry
+		byte carry;
+		int resultTest;
 		
+		
+		if(checkP(CARRY))
+			carry=1;
+		else
+			carry=0;
+			
+		resultTest=getA()+operand+carry;
+		setA(getA()+operand+carry);
+		if(resultTest > 255)
+			setP(CARRY);
+					
+		setFlags(getA());
 	
 	} else if(operation == "AND") { //Perform an AND with the read byte on the Accumulator. Uses: Value
 		//cout << endl << "AND: " << bitset<8>(getA());
@@ -749,12 +763,28 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "LDY") { //Load Y
 		setY(operand);
 		setFlags(operand);
-	} else if(operation == "LSR") { //TODO
+	} else if(operation == "LSR") { //Logical Shift Right
+		if(addressmode == "accumulator"){
+			if((1&getA())==1)
+				setP(CARRY);
+			else
+				clearP(CARRY);
+			setA(getA()>1);
+		}
+		else
+		{
+			if((1&operand)==1)
+				setP(CARRY);
+			else
+				clearP(CARRY);
+			writeMem(opAddress, readMem(opAddress)>1);
+		}
 	
 	} else if(operation == "NOP") { //No Operation
 		//Does nothing
-	} else if(operation == "ORA") {
-	
+	} else if(operation == "ORA") { //Inclusive OR  
+		setA(getA()|operand);
+		setFlags(getA());
 	} else if(operation == "TAX") { //Transfer A to X
 		setX(getA());
 		setFlags(getX());
@@ -779,10 +809,66 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "INY") { //Increment Y
 		setY(getY()+1);
 		setFlags(getY());
-	} else if(operation == "ROL") { //TODO
+	} else if(operation == "ROL") { //Rotate Left TODO Test
+		bool oldcarry = checkP(CARRY);
+		bool newcarry;
+		if((BIT7&getA())==BIT7)
+			newcarry = true;
+		else
+			newcarry = false;
+		if(newcarry)
+			setP(CARRY);
+		else
+			clearP(CARRY);
 		
-	} else if(operation == "ROR") { //TODO
-	
+		if(addressmode == "accumulator"){
+			setA(getA()<1);
+			if(oldcarry)
+				setA(getA()|BIT0);
+			else
+				setA((getA()&(~BIT0)));	
+			setFlags(getA());		
+		}
+		else
+		{
+			writeMem(opAddress, readMem(opAddress)<1);
+			if(oldcarry)
+				writeMem(opAddress, (getA()|BIT0));
+			else
+				writeMem(opAddress, (getA()&(~BIT0)));	
+			setFlags(readMem(opAddress));
+		}
+		
+	} else if(operation == "ROR") { //Rotate Right TODO Test
+		bool oldcarry = checkP(CARRY);
+		bool newcarry;
+		if((BIT0&getA())==BIT0)
+			newcarry = true;
+		else
+			newcarry = false;
+		if(newcarry)
+			setP(CARRY);
+		else
+			clearP(CARRY);
+		
+		if(addressmode == "accumulator"){
+			setA(getA()>1);
+			if(oldcarry)
+				setA(getA()|BIT7);
+			else
+				setA((getA()&(~BIT7)));
+				
+			setFlags(getA());		
+		}
+		else
+		{
+			writeMem(opAddress, readMem(opAddress)>1);
+			if(oldcarry)
+				writeMem(opAddress, (getA()|BIT0));
+			else
+				writeMem(opAddress, (getA()&(~BIT0)));	
+			setFlags(readMem(opAddress));
+		}
 	} else if(operation == "RTI") { //Return from Interrupt 
 		setP(0);
 		setP(stackPop());
@@ -795,7 +881,22 @@ void CPU::execute(string operation, string addressmode)
 		int address = toAddress(firstPart,secondPart)-1;
 		setPC(address);
 	} else if(operation == "SBC") { //TODO
-	
+		byte carry;
+		int resultTest;
+		
+		
+		if(checkP(CARRY))
+			carry=1;
+		else
+			carry=0;
+			
+		resultTest=getA()-operand-(1-carry);
+		
+		setA(getA()-operand-(1-carry));
+		if(resultTest < 0)
+			clearP(CARRY);
+					
+		setFlags(getA());
 	} else if(operation == "STA") { //Store A into Memory
 		writeMem(opAddress,getA());
 	} else if(operation == "TXS") { //Transfer X register to Stack Register

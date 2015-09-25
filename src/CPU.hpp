@@ -30,6 +30,17 @@ class CPU {
 			OVERFLOW = 64,//Set when an arithmetic operation produces a result too large to be represented in a byte
 			NEGATIVE = 128	//this is set if the result of an operation is negative, cleared if positive.
 		};
+		
+		enum bitPosition {
+			BIT0 = 1,
+			BIT1 = 2,
+			BIT2 = 4,
+			BIT3 = 8,
+			BIT4 = 16,
+			BIT5 = 32,
+			BIT6 = 64,
+			BIT7 = 128
+		};
 
 		
 		byte a; //Accumulator
