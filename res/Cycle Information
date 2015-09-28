@@ -1,0 +1,30 @@
+Cycle Information
+
+Below is the number of cycles each addressing mode is supposed to take. Notice that most
+operations only take a base amount of cycles to complete but it appears that some operations 
+also take some additional cycles to complete. 
+
+I'm going to implement cycle counting at the addressing mode level and then add extra clauses
+into the individual opcodes to check if they are being addressed a certain way, and if so
+modify the value that gets passed to sleep at the end of the decoding function. It means
+more if statements but seems like it will be easier than any other alternative.
+
+The first column is obviously the type of addressing mode. The first number is the "base"
+number of cycles that addressing mode takes to complete. The n(~~~) is the opcodes that 
+require n cycles. The +n means that you add n to the cycles if a page boundary is crossed 
+while the address is being decoded. This means when 0x00FF goes to 0x0100 for example.
+
+Immediate: 		2
+Zero Page: 		3, 5(ASL, DEC, INC, LSR, ROL, ROR)
+Zero Page,X: 	4, 6(ASL, DEC, INC, LSR, ROL, ROR)
+Absolute:		4, 6(ASL, DEC, INC, LSR, ROL, ROR)
+Absolute,X:		4+1, 7(ASL DEC, INC, LSR, ROL, ROR, JMP)
+Absolute,Y:		4+1, 5(STA)
+Indirect,X:		6
+Indirect,Y:		5+1, 6(STA)
+Implied:		2, 3(PHA, PHP), 4(PLA, PLP), 6(RTI, RTS), 7(BRK)
+Accumulator:	2
+
+Notes:
+	- Seems like ASL, DEC, INC, LSR, ROL, and ROR add 2 extra cycles to most that have it
+	- Implied adds 3 for Stack Push, 4 for Stack Pull, 6 for Returns, and 7 for Trigger Interrupt

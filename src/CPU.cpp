@@ -24,6 +24,7 @@ CPU::CPU(){}
 	
 //Startup procedure for the CPU, following what is on NESDEV wiki
 void CPU::start(){
+	cycleCount=0;
 	//Initialize Register Values
 	setP(0x24); //TODO change back to 0x34
 	clearP(UNUSED);
@@ -73,15 +74,10 @@ void CPU::start(){
 	wake();
 	
 	//Tests go below:
-	
-	
-	
-	
 	//decodeAt(getPC());
 	//cout << "Output (6e) : " << (int)getA()<<endl;
 	//stop("Tests complete");
 	//END tests
-	
 }
 void CPU::stop(string reason){
 	cout << "Stopping CPU: " << reason << endl;
@@ -91,9 +87,9 @@ void CPU::stop(string reason){
 
 //Function to be called each time the system cycles, to perform CPU tasks.
 //TODO: remove this var and the 20000 cycle code in cycle() (temporary)
-int inc = 0;
+
 void CPU::cycle(){
-	if(inc<100)
+	if(cycleCount<100)
 	{
 		if(!sleeping()){
 			
@@ -107,7 +103,7 @@ void CPU::cycle(){
 			lout.close();	
 	}
 		
-	inc++;
+	cycleCount++;
 	
 }
 
@@ -132,6 +128,7 @@ byte CPU::readNext(){
 
 //Writes given data memory to the selected address
 void CPU::writeMem(int address, byte value){
+	//TODO implement memory mirroring for RAM and PPU registers
 	//if(value != 0x00)
 		
 		//cout << "Writing data: " << hex << (int)value << " to address " << hex << address << endl;	
@@ -160,7 +157,7 @@ void CPU::decode(byte opCode, byte param1){}
 void CPU::decode(byte opCode, byte param1, byte param2){}
 void CPU::decode(byte opCode, byte param1, byte param2, byte param3){}
 
-//TODO Finish
+
 void CPU::decodeAt(int address){
 	byte opcode = readMem(address);
 	//Split opcode up into bits based on info from here: http://www.llx.com/~nparker/a2/opcodes.html
@@ -474,7 +471,7 @@ void CPU::decodeAt(int address){
 	
 	
 	//DEBUG
-	cout << hex << address << ":";
+	cout << dec <<cycleCount << " - " << hex << address << ":";
 	if(logging)
 		lout << hex << address;
 	if(!valid)
@@ -491,6 +488,19 @@ void CPU::decodeAt(int address){
 	
 }
 
+/*DEBUG - Cycle Timings Implementation
+done	Immediate: 	2
+		Zero Page: 		3, 5(ASL, DEC, INC, LSR, ROL, ROR)
+		Zero Page,X: 		4, 6(ASL, DEC, INC, LSR, ROL, ROR)
+		Absolute:			4, 6(ASL, DEC, INC, LSR, ROL, ROR)
+		Absolute,X:		4+1, 7(ASL, DEC, INC, LSR, ROL, ROR, JMP)
+		Absolute,Y:		4+1, 5(STA)
+done	(Indirect,X):	6
+		(Indirect),Y:		5+1, 6(STA)
+		Implied:			2, 3(PHA, PHP), 4(PLA, PLP), 6(RTI, RTS), 7(BRK)
+done	Accumulator:	2
+*/
+
 void CPU::execute(string operation, string addressmode)
 {
 	//Will migrate execution code here after the next backup
@@ -499,6 +509,7 @@ void CPU::execute(string operation, string addressmode)
 	byte firstByte, secondByte;
 	int opAddress = 0;
 	int operand = 0;
+	int sleepCycles=0;
 	
 	//Grab the first and second byte after the operation, we may only need one, or none. Remember most significant byte last
 	firstByte = readMem(getPC()+1);
@@ -507,6 +518,7 @@ void CPU::execute(string operation, string addressmode)
 			//operand = readNext();
 			incPC();
 			opAddress = getPC();
+			setWaitCycles(2);
 			
 	}else if (addressmode == "absolute"){ //Absolute is an explicit definition of the location in memory to use
 		//firstByte = readNext();
@@ -525,6 +537,7 @@ void CPU::execute(string operation, string addressmode)
 	} else if (addressmode == "accumulator") { //Targets the accumulator
 		//operand = getA();
 		incPC();
+		setWaitCycles(2);
 	} else if (addressmode == "absolute,x") { //Absolute value added to the X register
 		//firstByte = readNext();
 		//secondByte = readNext();
@@ -547,7 +560,8 @@ void CPU::execute(string operation, string addressmode)
 		incPC();
 		opAddress = toAddress(firstByte,0)+getX();
 		
-	} else if (addressmode == "(zeropage,x)") {
+	} else if (addressmode == "(zeropage,x)") { 
+		//AKA (Indirect, X)
 		firstByte = readNext();
 		byte tempAddress = firstByte+getX();
 		
@@ -563,8 +577,9 @@ void CPU::execute(string operation, string addressmode)
 		//cout << toAddress(readMem(tempAddress), readMem(tempAddress2));
 		//cout << (int)readMem(toAddress(readMem(tempAddress), readMem(tempAddress2))) <<endl;
 		opAddress = toAddress(readMem(tempAddress), readMem(tempAddress2));
-		
-	} else if (addressmode == "(zeropage),y") {
+		setWaitCycles(6)
+	} else if (addressmode == "(zeropage),y") { 
+		//AKA (Indirect),Y)
 		firstByte = readNext(); //start address
 		byte firstAddress = readMem(firstByte, 0);
 		byte secondAddress = readMem(firstByte+1, 0);
@@ -880,7 +895,7 @@ void CPU::execute(string operation, string addressmode)
 		int secondPart = stackPop();
 		int address = toAddress(firstPart,secondPart)-1;
 		setPC(address);
-	} else if(operation == "SBC") { //TODO
+	} else if(operation == "SBC") { //Subtract With Carry
 		byte carry;
 		int resultTest;
 		
@@ -932,18 +947,26 @@ int CPU::toAddress(byte firstByte, byte secondByte){
  *Theoretically the operation candbe completed on the same cycle, so we wait for the
  *operation to 'complete' before accepting other operation. Wasted CPU cycles but
  *its the best I can think of right now.	*/		
-void CPU::waitForCycles(short toWait){
-	cycleWait += toWait;
+
+void CPU::setWaitCycles(short toWait){
+	cycleWait = toWait;
+}
+void CPU::addWaitCycles(short toAdd){
+	cycleWait += toAdd;
 }	
+
 //Boolean to check if the program is waiting to complete an operation.	
 bool CPU::sleeping(){
 	if(cycleWait>0){
+		cout << dec << cycleCount << " - sleeping for " << cycleWait << " more cycles" << endl;
 		cycleWait--;
 		return true;
 	}
 	else
 		return false;
 }
+
+
 
 //Resets the counter for waiting, useful for resetting and possibly interrupts
 void CPU::wake(){
@@ -1104,6 +1127,10 @@ void CPU::stackPush(byte toPush){
 //Returns the value on the "bottom" of the stack, but does not change/remove it, and does not move the stack pointer.
 byte CPU::stackPeek(){
 	return readMem(toAddress(getS(),0x01));
+}
+
+bool CPU::ifPageCrossed(){
+	return false;
 }
 
 //DEBUG

@@ -51,6 +51,7 @@ class CPU {
 		byte p; //Processor Flags
 		byte memory[0xFFFF]; //Memory
 		short cycleWait;
+		int cycleCount;
 		byte resetVector; //Memory location to begin execution from
 	public:
 		CPU();
@@ -74,7 +75,8 @@ class CPU {
 		void decode(byte opCode, byte param1, byte param2);
 		void decode(byte opCode, byte param1, byte param2, byte param3);
 		void decodeAt(int address);
-		void waitForCycles(short toWait);		
+		void setWaitCycles(short toWait);
+		void addWaitCycles(short toAdd);
 		bool sleeping();
 		void wake();
 		void execute(std::string operation, std::string addressmode);
@@ -106,6 +108,8 @@ class CPU {
 		byte stackPop();
 		void stackPush(byte toPush);
 		byte stackPeek();
+		
+		bool ifPageCrossed();
 		
 		void printDebugStatus(int address);
 
