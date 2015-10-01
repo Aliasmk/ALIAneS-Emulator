@@ -489,15 +489,15 @@ void CPU::decodeAt(int address){
 }
 
 /*DEBUG - Cycle Timings Implementation
-done	Immediate: 	2
+done	Immediate: 		2
 		Zero Page: 		3, 5(ASL, DEC, INC, LSR, ROL, ROR)
-		Zero Page,X: 		4, 6(ASL, DEC, INC, LSR, ROL, ROR)
-		Absolute:			4, 6(ASL, DEC, INC, LSR, ROL, ROR)
+		Zero Page,X: 	4, 6(ASL, DEC, INC, LSR, ROL, ROR)
+		Absolute:		4, 6(ASL, DEC, INC, LSR, ROL, ROR)
 		Absolute,X:		4+1, 7(ASL, DEC, INC, LSR, ROL, ROR, JMP)
 		Absolute,Y:		4+1, 5(STA)
 done	(Indirect,X):	6
-		(Indirect),Y:		5+1, 6(STA)
-		Implied:			2, 3(PHA, PHP), 4(PLA, PLP), 6(RTI, RTS), 7(BRK)
+		(Indirect),Y:	5+1, 6(STA)
+		Implied:		2, 3(PHA, PHP), 4(PLA, PLP), 6(RTI, RTS), 7(BRK)
 done	Accumulator:	2
 */
 
@@ -624,7 +624,7 @@ void CPU::execute(string operation, string addressmode)
 		//cout << endl << "AND: " << bitset<8>(getA());
 		//cout << endl << " ON: " << bitset<8>(operand);
 		
-		setA(getA()|operand);
+		setA(getA()&operand);
 		setFlags(getA());
 		
 		
