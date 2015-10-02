@@ -4,54 +4,24 @@ c5f7            STX 86       zeropage   A:0 X:0 Y:0 P:26 SP:fd
 c5f9            STX 86       zeropage   A:0 X:0 Y:0 P:26 SP:fd
 c5fb            STX 86       zeropage   A:0 X:0 Y:0 P:26 SP:fd
 c5fd            JSR 20       absolute   A:0 X:0 Y:0 P:26 SP:fd
-c72d            NOP ea                  A:0 X:0 Y:0 P:26 SP:fb
-c72e            SEC 38        implied
-c72f            BCS b0      immediate   A:0 X:0 Y:0 P:27 SP:fb
-c735            NOP ea                  A:0 X:0 Y:0 P:27 SP:fb
-c736            CLC 18        implied
-c737            BCS b0      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c739           JMPa 4c       absolute   A:0 X:0 Y:0 P:26 SP:fb
-c740            NOP ea                  A:0 X:0 Y:0 P:26 SP:fb
-c741            SEC 38        implied
-c742            BCC 90      immediate   A:0 X:0 Y:0 P:27 SP:fb
-c744           JMPa 4c       absolute   A:0 X:0 Y:0 P:27 SP:fb
-c74b            NOP ea                  A:0 X:0 Y:0 P:27 SP:fb
-c74c            CLC 18        implied
-c74d            BCC 90      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c753            NOP ea                  A:0 X:0 Y:0 P:26 SP:fb
-c754            LDA a9      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c756            BEQ f0      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c75c            NOP ea                  A:0 X:0 Y:0 P:26 SP:fb
-c75d            LDA a9      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c75f            BEQ f0      immediate   A:40 X:0 Y:0 P:24 SP:fb
-c761           JMPa 4c       absolute   A:40 X:0 Y:0 P:24 SP:fb
-c768            NOP ea                  A:40 X:0 Y:0 P:24 SP:fb
-c769            LDA a9      immediate   A:40 X:0 Y:0 P:24 SP:fb
-c76b            BNE d0      immediate   A:40 X:0 Y:0 P:24 SP:fb
-c771            NOP ea                  A:40 X:0 Y:0 P:24 SP:fb
-c772            LDA a9      immediate   A:40 X:0 Y:0 P:24 SP:fb
-c774            BNE d0      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c776           JMPa 4c       absolute   A:0 X:0 Y:0 P:26 SP:fb
-c77d            NOP ea                  A:0 X:0 Y:0 P:26 SP:fb
-c77e            LDA a9      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c780            STA 85       zeropage   A:ff X:0 Y:0 P:a4 SP:fb
-c782            BIT 24       zeropage   A:ff X:0 Y:0 P:a4 SP:fb
-c784            BVS 70      immediate   A:ff X:0 Y:0 P:e4 SP:fb
-c78a            NOP ea                  A:ff X:0 Y:0 P:e4 SP:fb
-c78b            BIT 24       zeropage   A:ff X:0 Y:0 P:e4 SP:fb
-c78d            BVC 50      immediate   A:ff X:0 Y:0 P:e4 SP:fb
-c78f           JMPa 4c       absolute   A:ff X:0 Y:0 P:e4 SP:fb
-c796            NOP ea                  A:ff X:0 Y:0 P:e4 SP:fb
-c797            LDA a9      immediate   A:ff X:0 Y:0 P:e4 SP:fb
-c799            STA 85       zeropage   A:0 X:0 Y:0 P:66 SP:fb
-c79b            BIT 24       zeropage   A:0 X:0 Y:0 P:66 SP:fb
-c79d            BVC 50      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c7a3            NOP ea                  A:0 X:0 Y:0 P:26 SP:fb
-c7a4            BIT 24       zeropage   A:0 X:0 Y:0 P:26 SP:fb
-c7a6            BVS 70      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c7a8           JMPa 4c       absolute   A:0 X:0 Y:0 P:26 SP:fb
-c7af            NOP ea                  A:0 X:0 Y:0 P:26 SP:fb
-c7b0            LDA a9      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c7b2            BPL 10      immediate   A:0 X:0 Y:0 P:26 SP:fb
-c7b8            NOP ea                  A:0 X:0 Y:0 P:26 SP:fb
-c7b9            LDA a9      immediate   A:0 X:0 Y:0 P:26 SP:fb
+c72d            NOP ea    accumulator
+c72f            BCS b0      immediate   A:0 X:0 Y:0 P:26 SP:fb
+c731            LDX a2      immediate   A:0 X:0 Y:0 P:26 SP:fb
+c733            STX 86       zeropage   A:0 X:1 Y:0 P:24 SP:fb
+c735            NOP ea    accumulator
+c737            BCS b0      immediate   A:0 X:1 Y:0 P:24 SP:fb
+c739           JMPa 4c       absolute   A:0 X:1 Y:0 P:24 SP:fb
+c740            NOP ea    accumulator
+c742            BCC 90      immediate   A:0 X:1 Y:0 P:24 SP:fb
+c747            LDX a2      immediate   A:0 X:1 Y:0 P:24 SP:fb
+c749            STX 86       zeropage   A:0 X:3 Y:0 P:24 SP:fb
+c74b            NOP ea    accumulator
+c74d            BCC 90      immediate   A:0 X:3 Y:0 P:24 SP:fb
+c753            NOP ea    accumulator
+c755            BRK 0                  A:0 X:3 Y:0 P:24 SP:fb
+c5f5            LDX a2      immediate   A:0 X:3 Y:0 P:34 SP:f8
+c5f7            STX 86       zeropage   A:0 X:0 Y:0 P:36 SP:f8
+c5f9            STX 86       zeropage   A:0 X:0 Y:0 P:36 SP:f8
+c5fb            STX 86       zeropage   A:0 X:0 Y:0 P:36 SP:f8
+c5fd            JSR 20       absolute   A:0 X:0 Y:0 P:36 SP:f8
+c72d            NOP ea    accumulator

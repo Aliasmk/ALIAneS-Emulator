@@ -109,7 +109,7 @@ class CPU {
 		void stackPush(byte toPush);
 		byte stackPeek();
 		
-		bool ifPageCrossed();
+		bool pageCrossed();
 		
 		void printDebugStatus(int address);
 

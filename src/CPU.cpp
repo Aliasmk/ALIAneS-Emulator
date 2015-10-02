@@ -417,7 +417,7 @@ void CPU::decodeAt(int address){
 				valid=true; operation="DEX";
 			break;
 			case 0xea:
-				valid=true; operation="NOP"; addressmode = "";
+				valid=true; operation="NOP";
 			break;
 			
 			
@@ -490,15 +490,59 @@ void CPU::decodeAt(int address){
 
 /*DEBUG - Cycle Timings Implementation
 done	Immediate: 		2
-		Zero Page: 		3, 5(ASL, DEC, INC, LSR, ROL, ROR)
-		Zero Page,X: 	4, 6(ASL, DEC, INC, LSR, ROL, ROR)
-		Absolute:		4, 6(ASL, DEC, INC, LSR, ROL, ROR)
-		Absolute,X:		4+1, 7(ASL, DEC, INC, LSR, ROL, ROR, JMP)
-		Absolute,Y:		4+1, 5(STA)
+done	Zero Page: 		3, 5(ASL, DEC, INC, LSR, ROL, ROR) //3 set in addressmode instructions
+done	Zero Page,X: 	4, 6(ASL, DEC, INC, LSR, ROL, ROR) //4 set in addressmode instructions
+done	Absolute:		4, 6(ASL, DEC, INC, LSR, ROL, ROR) //4 set in addressmode instructions
+done	Absolute,X:		4+1, 7(ASL, DEC, INC, LSR, ROL, ROR, JMP)
+done	Absolute,Y:		4+1, 5(STA)
 done	(Indirect,X):	6
 		(Indirect),Y:	5+1, 6(STA)
-		Implied:		2, 3(PHA, PHP), 4(PLA, PLP), 6(RTI, RTS), 7(BRK)
+done	Implied:		2, 3(PHA, PHP), 4(PLA, PLP), 6(RTI, RTS), 7(BRK) //Implied is done by setting cycle counts in their instructions
 done	Accumulator:	2
+
+//For ZP
+if(operation == ASL || operation == DEC || operation == INC || operation == LSR || operation == ROL || operation == ROR){
+			setWaitCycles(5);
+		} else {
+			setWaitCycles(3);
+		}
+
+//For ZP,x and Abs
+if(operation == ASL || operation == DEC || operation == INC || operation == LSR || operation == ROL || operation == ROR){
+			setWaitCycles(6);
+		} else {
+			setWaitCycles(4);
+		} 
+
+For abs,x
+if(operation == "ASL" || operation == "DEC" || operation == "INC" || operation == "LSR" || operation == "ROL" || operation == "ROR" || operation == "JMP"){
+			setWaitCycles(6);
+		} else {
+			setWaitCycles(4);
+			if(pageCrossed())
+				addWaitCycles(1);
+		} 
+//for abs y
+if(operation == "STA"){
+			setWaitCycles(5);
+		} else {
+			setWaitCycles(4);
+			if(pageCrossed())
+				addWaitCycles(1);
+		}
+		
+//for indir.y
+if(operation == "STA"){
+			setWaitCycles(6);
+		} else {
+			setWaitCycles(5);
+			if(pageCrossed())
+				addWaitCycles(1);
+		}
+
+
+
+
 */
 
 void CPU::execute(string operation, string addressmode)
@@ -510,6 +554,7 @@ void CPU::execute(string operation, string addressmode)
 	int opAddress = 0;
 	int operand = 0;
 	int sleepCycles=0;
+	
 	
 	//Grab the first and second byte after the operation, we may only need one, or none. Remember most significant byte last
 	firstByte = readMem(getPC()+1);
@@ -527,12 +572,23 @@ void CPU::execute(string operation, string addressmode)
 		incPC();
 		incPC();
 		opAddress = toAddress(firstByte, secondByte);
+		if(operation == "ASL" || operation == "DEC" || operation == "INC" || operation == "LSR" || operation == "ROL" || operation == "ROR"){
+			setWaitCycles(6);
+		} else {
+			setWaitCycles(4);
+		} 
 		
 	} else if (addressmode == "zeropage") { //Zero Page is absolute but only for the first 256 bits of memory (0x0000 - 0x00ff)
 		//firstByte = readNext();
 		//operand = toAddress(firstByte, 0);
 		incPC();
 		opAddress = toAddress(firstByte,0);
+		
+		if(operation == "ASL" || operation == "DEC" || operation == "INC" || operation == "LSR" || operation == "ROL" || operation == "ROR"){
+			setWaitCycles(5);
+		} else {
+			setWaitCycles(3);
+		}
 	
 	} else if (addressmode == "accumulator") { //Targets the accumulator
 		//operand = getA();
@@ -546,6 +602,15 @@ void CPU::execute(string operation, string addressmode)
 		incPC();
 		opAddress = toAddress(firstByte,secondByte)+getX();
 		
+		if(operation == "ASL" || operation == "DEC" || operation == "INC" || operation == "LSR" || operation == "ROL" || operation == "ROR" || operation == "JMP"){
+			setWaitCycles(6);
+		} else {
+			setWaitCycles(4);
+			if(pageCrossed())
+				addWaitCycles(1);
+		}
+		
+		
 	} else if (addressmode == "absolute,y") { //Absolute value added to the Y register
 		//firstByte = readNext();
 		//secondByte = readNext();
@@ -553,12 +618,24 @@ void CPU::execute(string operation, string addressmode)
 		incPC();
 		incPC();
 		opAddress = toAddress(firstByte,secondByte)+getY();
+		if(operation == "STA"){
+			setWaitCycles(5);
+		} else {
+			setWaitCycles(4);
+			if(pageCrossed())
+				addWaitCycles(1);
+		}
 		
 	} else if (addressmode == "zeropage,x") { 
 		//firstByte = readNext();
 		//operand = readMem(toAddress(firstByte, 0)+getX());
 		incPC();
 		opAddress = toAddress(firstByte,0)+getX();
+		if(operation == "ASL" || operation == "DEC" || operation == "INC" || operation == "LSR" || operation == "ROL" || operation == "ROR"){
+			setWaitCycles(6);
+		} else {
+			setWaitCycles(4);
+		} 
 		
 	} else if (addressmode == "(zeropage,x)") { 
 		//AKA (Indirect, X)
@@ -577,22 +654,30 @@ void CPU::execute(string operation, string addressmode)
 		//cout << toAddress(readMem(tempAddress), readMem(tempAddress2));
 		//cout << (int)readMem(toAddress(readMem(tempAddress), readMem(tempAddress2))) <<endl;
 		opAddress = toAddress(readMem(tempAddress), readMem(tempAddress2));
-		setWaitCycles(6)
+		
+		
+		setWaitCycles(6);
 	} else if (addressmode == "(zeropage),y") { 
 		//AKA (Indirect),Y)
 		firstByte = readNext(); //start address
 		byte firstAddress = readMem(firstByte, 0);
 		byte secondAddress = readMem(firstByte+1, 0);
 		
+		if(operation == "STA"){
+			setWaitCycles(6);
+		} else {
+			setWaitCycles(5);
+			if(pageCrossed())
+				addWaitCycles(1);
+		}
+		
 		//DEBUG
 		//cout << (int)firstAddress << endl;
 		//cout << (int)secondAddress << endl;
 
 		operand = readMem(toAddress(firstAddress, secondAddress)+getY());
-	} else {
-		//firstByte = -1;
-		//secondByte = -1;
-		//operand = -1;
+	} else if (addressmode == "implied"){
+		setWaitCycles(2);
 	}
 	operand = readMem(opAddress);
 	if(addressmode != "implied" && addressmode != "accumulator"){
@@ -644,6 +729,7 @@ void CPU::execute(string operation, string addressmode)
 				clearP(CARRY);
 			writeMem(opAddress, readMem(opAddress)<1);
 		}
+		//TODO add cycles
 	} else if(operation == "BIT") { //Bit Test, set ZERO if none match. Then set OVERFLOW to memory bit 6 and NEGATIVE to memory bit 7
 		if((getA()&operand)==0)
 			setP(ZERO);
@@ -703,7 +789,7 @@ void CPU::execute(string operation, string addressmode)
 		stackPush(firstPart);
 		
 		stackPush(getP());
-		
+		setWaitCycles(7);
 		setPC(toAddress(readMem(0xFFFe),readMem(0xFFFF)));
 		setP(BRK);
 	} else if(operation == "CMP") { //Compare (Accumulator)
@@ -889,11 +975,13 @@ void CPU::execute(string operation, string addressmode)
 		setP(stackPop());
 		int firstPart = stackPop();
 		int secondPart = stackPop();
+		setWaitCycles(6);
 		setPC(toAddress(firstPart,secondPart));
 	} else if(operation == "RTS") {	//Return from Subroutine
 		int firstPart = stackPop();
 		int secondPart = stackPop();
 		int address = toAddress(firstPart,secondPart)-1;
+		setWaitCycles(6);
 		setPC(address);
 	} else if(operation == "SBC") { //Subtract With Carry
 		byte carry;
@@ -921,13 +1009,17 @@ void CPU::execute(string operation, string addressmode)
 		setFlags(getX());
 	} else if(operation == "PHA") { //Push the accumulator on to the stack
 		stackPush(getA());
+		setWaitCycles(3);
 	} else if(operation == "PLA") { //Pull the value from the stack into the Accumulator
 		setA(stackPop());
 		setFlags(getA());
+		setWaitCycles(4);
 	} else if(operation == "PHP") { //Push the status flags onto the stack
 		stackPush(getP());
+		setWaitCycles(3);
 	} else if(operation == "PLP") { //Pull the value from the stack into the status flags
 		setP(stackPop());
+		setWaitCycles(4);
 	} else if(operation == "STX") { //Store X into Memory
 		writeMem(opAddress,getX());
 	} else if(operation == "STY") {	//Store Y into Memory
@@ -1129,7 +1221,7 @@ byte CPU::stackPeek(){
 	return readMem(toAddress(getS(),0x01));
 }
 
-bool CPU::ifPageCrossed(){
+bool CPU::pageCrossed(){
 	return false;
 }
 
