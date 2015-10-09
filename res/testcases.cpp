@@ -12,6 +12,7 @@
  
  #include <fstream>
  #include <iostream> 
+ #include <string>
 
 using namespace std;
 
@@ -33,19 +34,34 @@ int main(){
 	}
 	
 	//Init testing
-	string address = "";
-	string test = "";
+	string address1, address2;
+	
+	cout << "ALIAneS - BaseLog" << endl;
+	bool status = true;
+	string alianesEnd, baseEnd;
+	while(status){
+	alianes >> address1; 
+	baselog >> address2;
+
 	
 	
-	for(int i = 0; i < 10; i++){
-	alianes >> address >> test;
-	cout << "Alianes output: " << address << test << endl;
+	
+	cout << address1 << " - " << address2 << " :: ";
+	if(address1 == address2){
+		cout << "GOOD";
+		alianes.ignore(256,'\n');
+		baselog.ignore(256,'\n');
+	}
+	else{
+		cout << "INCORRECT ADDRESS!" << endl;
+		status = false;
+		getline(alianes, alianesEnd);
+		getline(baselog, baseEnd);
+	}
+	
+	cout <<endl;
 	
 	
-	baselog >> address >> test;
-	cout << "Baselog output: " << address << test << endl;
-	aliasnes.getLine();
-	baselog.getLine();
 	}
 	
 	alianes.close();

@@ -15,7 +15,7 @@ using namespace std;
 
 
 int spacing = 15;
-int startoverride=0xc000;
+int startoverride=0xc000; //0xc000;
 bool logging = true;
 ofstream lout;
 
@@ -89,7 +89,7 @@ void CPU::stop(string reason){
 //TODO: remove this var and the 20000 cycle code in cycle() (temporary)
 
 void CPU::cycle(){
-	if(cycleCount<100)
+	if(cycleCount<12800)
 	{
 		if(!sleeping()){
 			
@@ -98,7 +98,7 @@ void CPU::cycle(){
 		}
 	}
 	else{
-		stop("Finished 100 cycles");
+		stop("Finished 12800 cycles");
 		if(logging)
 			lout.close();	
 	}
@@ -127,19 +127,34 @@ byte CPU::readNext(){
 }
 
 //Writes given data memory to the selected address
-void CPU::writeMem(int address, byte value){
-	//TODO implement memory mirroring for RAM and PPU registers
-	//if(value != 0x00)
-		
-		//cout << "Writing data: " << hex << (int)value << " to address " << hex << address << endl;	
+void CPU::writeMem(int address, byte value){	
 	memory[address] = value;
+	
+	//Memory Mirroring
+	if(address >= 0x0800 && address <= 0x1FFF){
+		//Mirror every 0x0800 bytes
+		int offset = address%0x0800;	
+		for(int i = 0x0800; i<0x1FFF; i+=0x0800){
+			memory[i+offset] = value;
+			//cout << "mirror" << hex << i+offset << endl;
+		}
+	}
+	if(address >= 0x2000 && address <= 0x3FFF){
+		//Mirror every 8 bytes
+		int offset = address%0x8;
+		for(int i = 0x2000; i<0x3FFF; i+=8){
+			memory[i+offset] = value;
+			//cout << "mirror" << hex << i+offset << endl;
+		}
+		
+	}
 }
 //Writes given data to a range on addresses between start and end
 void CPU::writeMem(int addressStart, int addressEnd, byte value){
 	for(int i=addressStart; i<=addressEnd; i++)
 	{
 		//cout << i;
-		memory[i] = value;
+		writeMem(i,value);
 		if(value != 0x00)
 			cout << "Writing non-zero data: " << hex << value << " to address " << hex << i << endl;
 	}
@@ -417,7 +432,7 @@ void CPU::decodeAt(int address){
 				valid=true; operation="DEX";
 			break;
 			case 0xea:
-				valid=true; operation="NOP";
+				valid=true; operation="NOP"; addressmode = "implied";
 			break;
 			
 			
@@ -457,10 +472,10 @@ void CPU::decodeAt(int address){
 				valid=true; operation="JSR"; addressmode="absolute";
 			break;
 			case 0x40:
-				valid=true; operation="RTI";
+				valid=true; operation="RTI"; addressmode="implied";
 			break;
 			case 0x60:
-				valid=true; operation="RTS";
+				valid=true; operation="RTS"; addressmode="implied";
 			break;
 		}
 	
@@ -471,9 +486,9 @@ void CPU::decodeAt(int address){
 	
 	
 	//DEBUG
-	cout << dec <<cycleCount << " - " << hex << address << ":";
+	cout << dec <<cycleCount << " - " << hex << uppercase <<address << ":";
 	if(logging)
-		lout << hex << address;
+		lout << hex << uppercase<< address;
 	if(!valid)
 		cout << setw(spacing) << "UKN" << hex << (int)opcode;
 	else {
@@ -592,7 +607,7 @@ void CPU::execute(string operation, string addressmode)
 	
 	} else if (addressmode == "accumulator") { //Targets the accumulator
 		//operand = getA();
-		incPC();
+		//incPC();
 		setWaitCycles(2);
 	} else if (addressmode == "absolute,x") { //Absolute value added to the X register
 		//firstByte = readNext();
@@ -683,15 +698,23 @@ void CPU::execute(string operation, string addressmode)
 	if(addressmode != "implied" && addressmode != "accumulator"){
 			
 			cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand; // << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
-			printDebugStatus(getPC());
+			
+	}
+	else
+	{
+		cout << setw(spacing)<< hex << "-" << setw(spacing) << "-";
 	}
 	
+	printDebugStatus(getPC());
 	
 	//INSTRUCTIONS
 	if(operation == "ADC"){ //Add with Carry
 		byte carry;
 		int resultTest;
-		
+		//if( (A ^ s) & (v ^ s) & 0x80 )
+// A = Accumulator before the addition
+// v = the value adding to the accumulator
+// s = the sum of the addition (A+v+C)
 		
 		if(checkP(CARRY))
 			carry=1;
@@ -699,9 +722,17 @@ void CPU::execute(string operation, string addressmode)
 			carry=0;
 			
 		resultTest=getA()+operand+carry;
+		
+		if((getA() ^ resultTest) & (operand ^ s) & 0x80)
+			setP(OVERFLOW);
+		else
+			clearP(OVERFLOW);
+		
 		setA(getA()+operand+carry);
-		if(resultTest > 255)
+		if(resultTest > 0xFF)
 			setP(CARRY);
+		else
+			clearP(CARRY);
 					
 		setFlags(getA());
 	
@@ -719,7 +750,8 @@ void CPU::execute(string operation, string addressmode)
 				setP(CARRY);
 			else
 				clearP(CARRY);
-			setA(getA()<1);
+			setA(getA()<<1);
+			setFlags(getA());
 		}
 		else
 		{
@@ -727,17 +759,22 @@ void CPU::execute(string operation, string addressmode)
 				setP(CARRY);
 			else
 				clearP(CARRY);
-			writeMem(opAddress, readMem(opAddress)<1);
+			writeMem(opAddress, readMem(opAddress)<<1);
+			setFlags(readMem(opAddress));
 		}
 		//TODO add cycles
 	} else if(operation == "BIT") { //Bit Test, set ZERO if none match. Then set OVERFLOW to memory bit 6 and NEGATIVE to memory bit 7
 		if((getA()&operand)==0)
 			setP(ZERO);
-		if((operand&0x40)==0x40) //if bit 6 set in operand
+		else
+			clearP(ZERO);
+			
+		if((operand&BIT6)==BIT6) //if bit 6 set in operand
 			setP(OVERFLOW);
 		else
 			clearP(OVERFLOW);
-		if((operand&0x80)==0x80) //if bit 7 set in operand
+			
+		if((operand&BIT7)==BIT7) //if bit 7 set in operand
 			setP(NEGATIVE);
 		else
 			clearP(NEGATIVE);
@@ -798,19 +835,24 @@ void CPU::execute(string operation, string addressmode)
 		setFlags(temp);
 		if(temp >=0) //a>=operand
 			setP(CARRY);
+		else
+			clearP(CARRY);
 		
 	} else if(operation == "CPX") { //Compare X
 		int temp = getX()-operand;
 		setFlags(temp);
 		if(temp >=0) //a>=operand
 			setP(CARRY);
+		else
+			clearP(CARRY);
 	
 	} else if(operation == "CPY") { //Compare Y
 		int temp = getY()-operand;
 		setFlags(temp);
 		if(temp >=0) //a>=operand
 			setP(CARRY);
-	
+		else
+			clearP(CARRY);
 	} else if(operation == "DEC") { //Decrement Memory
 		int result = operand - 1;
 		writeMem(opAddress, result);
@@ -850,8 +892,20 @@ void CPU::execute(string operation, string addressmode)
 		setPC(opAddress-1);
 	} else if(operation == "JSR") { //Jump to Subroutine
 		byte firstPart, secondPart;
-		firstPart = (getPC()&0xF0)>4;
-		secondPart = (getPC()&0xF);
+		//Adds three because it needs to get past the memory addresses of the arguments 
+		//firstPart = ((getPC())&0xF0)>8;
+		//secondPart = ((getPC())&0xF);
+		
+		/*
+		firstPart = (getPC()+1)>>8;
+		secondPart = (getPC()+1);*/
+		firstPart = (getPC());
+		secondPart = (getPC())>>8;
+		
+		//DEBUG
+		
+		
+		
 		stackPush(secondPart);
 		stackPush(firstPart);
 		setPC(opAddress-1); 
@@ -870,7 +924,8 @@ void CPU::execute(string operation, string addressmode)
 				setP(CARRY);
 			else
 				clearP(CARRY);
-			setA(getA()>1);
+			setA(getA()>>1);
+			setFlags(getA());
 		}
 		else
 		{
@@ -878,7 +933,8 @@ void CPU::execute(string operation, string addressmode)
 				setP(CARRY);
 			else
 				clearP(CARRY);
-			writeMem(opAddress, readMem(opAddress)>1);
+			writeMem(opAddress, readMem(opAddress)>>1);
+			setFlags(readMem(opAddress));
 		}
 	
 	} else if(operation == "NOP") { //No Operation
@@ -913,7 +969,11 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "ROL") { //Rotate Left TODO Test
 		bool oldcarry = checkP(CARRY);
 		bool newcarry;
-		if((BIT7&getA())==BIT7)
+		
+		
+		if(addressmode == "accumulator"){
+			
+			if((BIT7&getA())==BIT7)
 			newcarry = true;
 		else
 			newcarry = false;
@@ -921,9 +981,8 @@ void CPU::execute(string operation, string addressmode)
 			setP(CARRY);
 		else
 			clearP(CARRY);
-		
-		if(addressmode == "accumulator"){
-			setA(getA()<1);
+			
+			setA(getA()<<1);
 			if(oldcarry)
 				setA(getA()|BIT0);
 			else
@@ -932,7 +991,17 @@ void CPU::execute(string operation, string addressmode)
 		}
 		else
 		{
-			writeMem(opAddress, readMem(opAddress)<1);
+			
+			if((BIT7&operand)==BIT7)
+				newcarry = true;
+			else
+				newcarry = false;
+			if(newcarry)
+				setP(CARRY);
+			else
+				clearP(CARRY);
+			
+			writeMem(opAddress, readMem(opAddress)<<1);
 			if(oldcarry)
 				writeMem(opAddress, (getA()|BIT0));
 			else
@@ -943,49 +1012,68 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "ROR") { //Rotate Right TODO Test
 		bool oldcarry = checkP(CARRY);
 		bool newcarry;
-		if((BIT0&getA())==BIT0)
-			newcarry = true;
-		else
-			newcarry = false;
-		if(newcarry)
-			setP(CARRY);
-		else
-			clearP(CARRY);
 		
+		cout << endl<< "before ror: " << bitset<8>(getA()) << " after: ";
 		if(addressmode == "accumulator"){
-			setA(getA()>1);
+			//check carry bit
+			if((BIT0&getA())==BIT0)
+				newcarry = true;
+			else
+				newcarry = false;
+			
+			if(newcarry)
+				setP(CARRY);
+			else
+				clearP(CARRY);
+			
+			//write
+			setA(getA()>>1);
 			if(oldcarry)
 				setA(getA()|BIT7);
 			else
 				setA((getA()&(~BIT7)));
 				
-			setFlags(getA());		
+			setFlags(getA());
+			cout << bitset<8>(getA());		
 		}
 		else
 		{
-			writeMem(opAddress, readMem(opAddress)>1);
-			if(oldcarry)
-				writeMem(opAddress, (getA()|BIT0));
+			if((BIT0&operand)==BIT0)
+				newcarry = true;
 			else
-				writeMem(opAddress, (getA()&(~BIT0)));	
+				newcarry = false;
+			
+			if(newcarry)
+				setP(CARRY);
+			else
+			clearP(CARRY);
+			
+			writeMem(opAddress, readMem(opAddress)>>1);
+			if(oldcarry)
+				writeMem(opAddress, (getA()|BIT7));
+			else
+				writeMem(opAddress, (getA()&(~BIT7)));	
 			setFlags(readMem(opAddress));
 		}
 	} else if(operation == "RTI") { //Return from Interrupt 
-		setP(0);
+		clearP(0xFF);
 		setP(stackPop());
 		int firstPart = stackPop();
 		int secondPart = stackPop();
 		setWaitCycles(6);
-		setPC(toAddress(firstPart,secondPart));
+		setPC(toAddress(firstPart,secondPart)-1);
 	} else if(operation == "RTS") {	//Return from Subroutine
 		int firstPart = stackPop();
 		int secondPart = stackPop();
-		int address = toAddress(firstPart,secondPart)-1;
+		
+		
+		int address = toAddress(firstPart,secondPart);
 		setWaitCycles(6);
 		setPC(address);
 	} else if(operation == "SBC") { //Subtract With Carry
 		byte carry;
 		int resultTest;
+		
 		
 		
 		if(checkP(CARRY))
@@ -995,9 +1083,18 @@ void CPU::execute(string operation, string addressmode)
 			
 		resultTest=getA()-operand-(1-carry);
 		
+		// SET_OVERFLOW(((AC ^ temp) & 0x80) && ((AC ^ src) & 0x80));
+		if((getA() ^ resultTest) & (getA() ^ operand) & 0x80)
+			setP(OVERFLOW);
+		else
+			clearP(OVERFLOW);
+		
 		setA(getA()-operand-(1-carry));
+		
 		if(resultTest < 0)
 			clearP(CARRY);
+		else
+			setP(CARRY);
 					
 		setFlags(getA());
 	} else if(operation == "STA") { //Store A into Memory
@@ -1015,9 +1112,10 @@ void CPU::execute(string operation, string addressmode)
 		setFlags(getA());
 		setWaitCycles(4);
 	} else if(operation == "PHP") { //Push the status flags onto the stack
-		stackPush(getP());
+		stackPush((getP()|0x10)); //For some reason the break flag is or'd...  http://forums.nesdev.com/viewtopic.php?f=3&t=8448&hilit=PLP+Break
 		setWaitCycles(3);
 	} else if(operation == "PLP") { //Pull the value from the stack into the status flags
+		clearP(0xFF);
 		setP(stackPop());
 		setWaitCycles(4);
 	} else if(operation == "STX") { //Store X into Memory
@@ -1050,7 +1148,7 @@ void CPU::addWaitCycles(short toAdd){
 //Boolean to check if the program is waiting to complete an operation.	
 bool CPU::sleeping(){
 	if(cycleWait>0){
-		cout << dec << cycleCount << " - sleeping for " << cycleWait << " more cycles" << endl;
+		//cout << dec << cycleCount << " - sleeping for " << cycleWait << " more cycles" << endl;
 		cycleWait--;
 		return true;
 	}
@@ -1204,14 +1302,16 @@ void CPU::setFlags(byte operand){
 
 //Pops the byte off the "bottom" of the stack, then increments the stack pointer.
 byte CPU::stackPop(){
-	byte temp = readMem(toAddress(getS(),0x01));
+	byte temp = readMem(toAddress(getS()+1,0x01));
+	cout << endl << "Popping value: " << hex << (int)temp << " from address " << toAddress(getS()+1,0x01) << endl; 
 	setS(getS()+1);
 	return temp;
 }
 
 //Pushs a value onto the "bottom" of the stack and decrements the stack pointer.
 void CPU::stackPush(byte toPush){
-	writeMem(toAddress(getS(),0x01), toPush);
+	writeMem(toAddress(getS(),0x01), (int)toPush);
+	cout <<endl <<"Pushing value: " << hex << (int)toPush << " to address " << toAddress(getS(),0x01) <<endl; 
 	setS(getS()-1);
 	
 }
