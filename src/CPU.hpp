@@ -19,6 +19,11 @@ class CPU {
 	private:
 		typedef std::uint8_t byte;
 		
+		enum interrupt {
+			NONE = 0,
+			NMI = 1,
+			IRQ = 2
+		};
 		
 		enum statusReg {
 			CARRY = 1,	//
@@ -42,6 +47,7 @@ class CPU {
 			BIT7 = 128
 		};
 
+		int currentInterrupt;
 		
 		byte a; //Accumulator
 		byte x; //X Register
@@ -69,11 +75,10 @@ class CPU {
 		byte readMem(byte firstByte, byte secondByte); //read from two bytes, reversing the significance.
 		byte readNext(); //Increment the PC and read at that location
 		
+		void evaluateInterrupt(int & interruptType);
+		void triggerInterrupt(int toTrigger);
+		
 		//Decoding and running OPcodes
-		void decode(byte opCode);
-		void decode(byte opCode, byte param1);
-		void decode(byte opCode, byte param1, byte param2);
-		void decode(byte opCode, byte param1, byte param2, byte param3);
 		void decodeAt(int address);
 		void setWaitCycles(short toWait);
 		void addWaitCycles(short toAdd);
@@ -109,7 +114,9 @@ class CPU {
 		void stackPush(byte toPush);
 		byte stackPeek();
 		
-		bool pageCrossed();
+		bool pageCrossed(int address1, int address2);
+		
+		void memoryDump();
 		
 		void printDebugStatus(int address);
 

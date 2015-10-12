@@ -15,7 +15,7 @@ using namespace std;
 
 
 int spacing = 15;
-int startoverride=0xc000; //0xc000;
+int startoverride=0xc000; //set to 0 for auto
 bool logging = true;
 ofstream lout;
 
@@ -92,7 +92,7 @@ void CPU::cycle(){
 	if(cycleCount<25600)
 	{
 		if(!sleeping()){
-			
+			evaluateInterrupt(currentInterrupt);
 			decodeAt(getPC());
 			incPC();
 		}
@@ -101,6 +101,7 @@ void CPU::cycle(){
 		stop("Finished 25600 cycles");
 		if(logging)
 			lout.close();	
+		//memoryDump();
 	}
 		
 	cycleCount++;
@@ -160,17 +161,57 @@ void CPU::writeMem(int addressStart, int addressEnd, byte value){
 	}
 }
 
+
+void CPU::triggerInterrupt(int toTrigger){
+	currentInterrupt = toTrigger;
+}
+
+//Run before any decoding every CPU cycle.
+void CPU::evaluateInterrupt(int & interruptType){
+	byte firstPart, secondPart;
+	switch(interruptType){
+		case NONE:
+			//No interrupt, continue as normal
+		break;
+		case NMI:
+			//Push pc and flags to stack, setpc to NMI interrupt vector and set I. 7 cycles
+			
+			firstPart = (getPC()&0xF0)>4;
+			secondPart = (getPC()&0xF);
+			stackPush(secondPart);
+			stackPush(firstPart);
+		
+			stackPush(getP());
+			setWaitCycles(7);
+			setPC(toAddress(readMem(0xFFFA),readMem(0xFFFB)));
+			setP(BRK);
+		break;
+		case IRQ:
+			//Push pc and flags to stack, setpc to IRQ interrupt vector and set I. 7 cycles
+			
+			firstPart = (getPC()&0xF0)>4;
+			secondPart = (getPC()&0xF);
+			stackPush(secondPart);
+			stackPush(firstPart);
+		
+			stackPush(getP());
+			setWaitCycles(7);
+			setPC(toAddress(readMem(0xFFFE),readMem(0xFFFF)));
+			setP(BRK);
+		break;
+	}
+	interruptType = NONE;
+	
+}
+
+
+
 //---DECODING---//
 
 //uint16_t  get16bit(uint16_t pc){
 //	return (readMem(pc+1)<<4)&(readMem(pc));
 //}
 
-//OPCode decoding methods. TODO: Implement these
-void CPU::decode(byte opCode){}
-void CPU::decode(byte opCode, byte param1){}
-void CPU::decode(byte opCode, byte param1, byte param2){}
-void CPU::decode(byte opCode, byte param1, byte param2, byte param3){}
 
 
 void CPU::decodeAt(int address){
@@ -663,7 +704,7 @@ void CPU::execute(string operation, string addressmode)
 			setWaitCycles(6);
 		} else {
 			setWaitCycles(4);
-			if(pageCrossed())
+			if(pageCrossed(opAddress, opAddress-getX()))
 				addWaitCycles(1);
 		}
 		
@@ -681,7 +722,7 @@ void CPU::execute(string operation, string addressmode)
 			setWaitCycles(5);
 		} else {
 			setWaitCycles(4);
-			if(pageCrossed())
+			if(pageCrossed(opAddress, opAddress-getY()))
 				addWaitCycles(1);
 		}
 		
@@ -747,7 +788,7 @@ void CPU::execute(string operation, string addressmode)
 			setWaitCycles(6);
 		} else {
 			setWaitCycles(5);
-			if(pageCrossed())
+			if(pageCrossed(opAddress, opAddress-getY()))
 				addWaitCycles(1);
 		}
 		
@@ -1443,11 +1484,27 @@ byte CPU::stackPeek(){
 	return readMem(toAddress(getS(),0x01));
 }
 
-bool CPU::pageCrossed(){
-	return false;
+//TODO page cross detection
+bool CPU::pageCrossed(int address1, int address2){
+	if((address1&0xFF00) == (address2&0xFF00))
+		return false;
+	else
+		return true;
+}
+ 
+//TODO dumps the entire memory of the CPU to file.
+void CPU::memoryDump(){
+	ofstream dump;
+	dump.open("../res/logs/alianesLast.dump");
+	for(int i = 0; i < 0xFFFF; i++)
+	{
+		dump << memory[i];
+	}
+	dump.close();
 }
 
 //DEBUG
+//TODO include all output in one function for finer and more organized debug
 void CPU::printDebugStatus(int address){
 	//cout << endl << address << ": " << hex << (int)readMem(address) << " " << hex << (int)readMem(address+1) << " " << hex << (int)readMem(address+2);
 	cout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS();
