@@ -4,12 +4,9 @@
 
 ###Current Progress and To do's###
 
-- All (supported) opcodes written!
-- Testing needs to be done on all of them
-- Cycle counts are being implemented
-- Memory mirroring still needs to be implemented
+CPU Complete! Bronze goal achieved! 
 
-Bronze goal in sight!
+Over the next few weeks I'll be cleaning up the CPU code and publishing some research logs on my blog. From there I'll start on my PPU research, and finally start the PPU.
 
 ###August Shell Update###
 After a couple months of my computer being out of commission, plus a new co-op job, I haven't had much time to work on the project. But I've made some progress: the August shell update is my first major release in a couple months and it includes a new "front end" that can be used to run the emulator as normal, or in a test mode. In this test mode you can write to memory and execute at different locations. It's quite finiky though...
@@ -24,7 +21,7 @@ I'll be taking a few weeks off from programming to write detailed blog entries. 
 
 I have a tier'd goal structure for this project:
 
-- Bronze: Achieve CPU emulation
+- Bronze: Achieve CPU emulation - DONE!
 - Silver: Achieve PPU emulation. Games should run at >5 frames per second
 - Gold: Add very basic mapper support. Games should approach comfortable speeds if not already.
 - Platinum: Add more mapper support and APU emulation. Games should run at or higher than full speed.
