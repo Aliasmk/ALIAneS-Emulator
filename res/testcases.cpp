@@ -34,26 +34,26 @@ int main(){
 	}
 	
 	//Init testing
-	string address1, address2;
+	string address1, address2, memory;
 	
 	cout << "ALIAneS - BaseLog" << endl;
 	bool status = true;
 	string alianesEnd, baseEnd;
 	while(status){
-	alianes >> address1; 
+	alianes >> memory >> address1; 
 	baselog >> address2;
 
 	
 	
 	
-	cout << address1 << " - " << address2 << " :: ";
+	cout << memory << ":" << address1 << " - " << address2 << " :: ";
 	if(address1 == address2){
 		cout << "GOOD";
 		alianes.ignore(256,'\n');
 		baselog.ignore(256,'\n');
 	}
 	else{
-		cout << "INCORRECT ADDRESS!" << endl;
+		cout << "MISMATCH" << endl;
 		status = false;
 		getline(alianes, alianesEnd);
 		getline(baselog, baseEnd);

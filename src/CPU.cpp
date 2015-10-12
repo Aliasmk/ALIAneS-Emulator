@@ -89,7 +89,7 @@ void CPU::stop(string reason){
 //TODO: remove this var and the 20000 cycle code in cycle() (temporary)
 
 void CPU::cycle(){
-	if(cycleCount<12800)
+	if(cycleCount<25600)
 	{
 		if(!sleeping()){
 			
@@ -98,7 +98,7 @@ void CPU::cycle(){
 		}
 	}
 	else{
-		stop("Finished 12800 cycles");
+		stop("Finished 25600 cycles");
 		if(logging)
 			lout.close();	
 	}
@@ -193,6 +193,9 @@ void CPU::decodeAt(int address){
 	if(cc == 1) //cc = 01
 	{
 		switch(bbb){
+					default:
+						addressmode = "na";
+					break;
 					case 0: //(zeropage,x)
 						addressmode = "(zeropage,x)";
 					break;
@@ -238,7 +241,8 @@ void CPU::decodeAt(int address){
 				break;
 			case 4:
 				operation = "STA";
-				valid = true;
+				if(addressmode!="immediate")
+					valid = true;
 			break;
 			case 5:
 				operation = "LDA";
@@ -257,6 +261,9 @@ void CPU::decodeAt(int address){
 	else if(cc == 2) //cc = 10
 	{
 		switch(bbb){
+					default:
+						addressmode = "na";
+					break;
 					case 0: //immediate
 						addressmode = "immediate";
 					break;
@@ -273,47 +280,63 @@ void CPU::decodeAt(int address){
 						addressmode = "zeropage,x";
 					break;
 					case 7: //absolute,x
-						addressmode = "absolute,y";
+						addressmode = "absolute,x";
 					break;
 				}
 		switch(aaa)	{
 			case 0:
 				operation = "ASL";
-				valid = true;
+				if(addressmode!="immediate")
+					valid = true;
 			break;
 			case 1:
 				operation = "ROL";
-				valid = true;
+				if(addressmode!="immediate")
+					valid = true;
 			break;
 			case 2:
 				operation = "LSR";
-				valid = true;
+				if(addressmode!="immediate")
+					valid = true;
 			break;
 			case 3:
 				operation = "ROR";
-				valid = true;
+				if(addressmode!="immediate")
+					valid = true;
 			break;
 			case 4:
 				operation = "STX";
-				valid = true;
+				if(addressmode == "zeropage,x")
+					addressmode = "zeropage,y";
+				if(addressmode!="immediate")
+					valid = true;
 			break;
 			case 5:
 				operation = "LDX";
+				if(addressmode == "zeropage,x")
+					addressmode = "zeropage,y";
+				if(addressmode == "absolute,x")
+					addressmode = "absolute,y";
 				valid = true;
 			break;
 			case 6:
 				operation = "DEC";
-				valid = true;
+				if(addressmode!="immediate")
+					valid = true;
 			break;
 			case 7:
 				operation = "INC";
-				valid = true;
+				if(addressmode!="immediate")
+					valid = true;
 			break;
 		}
 	}
 	else if(cc == 0) //cc = 00
 	{
 		switch(bbb){
+					default:
+						addressmode = "na";
+					break;
 					case 0: //immediate
 						addressmode = "immediate";
 					break;
@@ -333,19 +356,22 @@ void CPU::decodeAt(int address){
 		switch(aaa)	{
 			case 1:
 				operation = "BIT";
-				valid = true;
+				if(addressmode!="immediate" && addressmode!="zeropage,x" && addressmode!="absolute,x")
+					valid = true;
 			break;
-			case 2:
+			/*case 2:
 				operation = "JMPa";
 				valid = true;
-			break;
-			case 3:
-				operation = "JMP";
+			break;*/
+			/*case 3: -- Moving down to other cases
+				operation = "JMP"; 
+				//addressmode = "jumpindirect";
 				valid = true;
-			break;
+			break;*/
 			case 4:
 				operation = "STY";
-				valid = true;
+				if(addressmode!="immediate" && addressmode!="absolute,x")
+					valid = true;
 			break;
 			case 5:
 				operation = "LDY";
@@ -353,11 +379,13 @@ void CPU::decodeAt(int address){
 			break;
 			case 6:
 				operation = "CPY";
-				valid = true;
+				if(addressmode!="zeropage,x" && addressmode!="absolute,x")
+					valid = true;
 			break;
 			case 7:
 				operation = "CPX";
-				valid = true;
+				if(addressmode!="zeropage,x" && addressmode!="absolute,x")
+					valid = true;
 			break;
 		}
 	}
@@ -368,73 +396,79 @@ void CPU::decodeAt(int address){
 				standardInstruction = true;
 			break;
 			case 0x08:
-				valid=true; operation="PHP";
+				valid=true; operation="PHP"; addressmode = "implied";
 			break;
 			case 0x28:
-				valid=true; operation="PLP";
+				valid=true; operation="PLP"; addressmode = "implied";
 			break;
 			case 0x48:
-				valid=true; operation="PHA";
+				valid=true; operation="PHA"; addressmode = "implied";
 			break;
 			case 0x68:
-				valid=true; operation="PLA";
+				valid=true; operation="PLA"; addressmode = "implied";
 			break;
 			case 0x88:
-				valid=true; operation="DEY";
+				valid=true; operation="DEY"; addressmode = "implied";
 			break;
 			case 0xA8:
-				valid=true; operation="TAY";
+				valid=true; operation="TAY"; addressmode = "implied";
 			break;
 			case 0xC8:
-				valid=true; operation="INY";
+				valid=true; operation="INY"; addressmode = "implied";
 			break;
 			case 0xE8:
-				valid=true; operation="INX";
+				valid=true; operation="INX"; addressmode = "implied";
 			break;
 			case 0x18:
-				valid=true; operation="CLC";
+				valid=true; operation="CLC"; addressmode = "implied";
 			break;
 			case 0x38:
-				valid=true; operation="SEC";
+				valid=true; operation="SEC"; addressmode = "implied";
 			break;
 			case 0x58:
-				valid=true; operation="CLI";
+				valid=true; operation="CLI"; addressmode = "implied";
 			break;
 			case 0x78:
-				valid=true; operation="SEI";
+				valid=true; operation="SEI"; addressmode = "implied";
 			break;
 			case 0x98:
-				valid=true; operation="TYA";
+				valid=true; operation="TYA"; addressmode = "implied";
 			break;
 			case 0xb8:
-				valid=true; operation="CLV";
+				valid=true; operation="CLV"; addressmode = "implied";
 			break;
 			case 0xD8:
-				valid=true; operation="CLD";
+				valid=true; operation="CLD"; addressmode = "implied";
 			break;
 			case 0xF8:
-				valid=true; operation="SED";
+				valid=true; operation="SED"; addressmode = "implied";
 			break;
 			
 			case 0x8a:
-				valid=true; operation="TXA";
+				valid=true; operation="TXA"; addressmode = "implied";
 			break;
 			case 0x9a:
-				valid=true; operation="TXS";
+				valid=true; operation="TXS"; addressmode = "implied";
 			break;
 			case 0xaa:
-				valid=true; operation="TAX";
+				valid=true; operation="TAX"; addressmode = "implied";
 			break;
 			case 0xba:
-				valid=true; operation="TSX";
+				valid=true; operation="TSX"; addressmode = "implied";
 			break;
 			case 0xca:
-				valid=true; operation="DEX";
+				valid=true; operation="DEX"; addressmode = "implied";
 			break;
 			case 0xea:
 				valid=true; operation="NOP"; addressmode = "implied";
 			break;
 			
+			case 0x6c:
+				valid=true; operation="JMP"; addressmode = "jumpindirect";
+			break;
+			case 0x4c:
+				valid=true; operation="JMPa"; addressmode = "absolute";
+			break;
 			
 			//Branch on - instructions
 			
@@ -478,6 +512,15 @@ void CPU::decodeAt(int address){
 				valid=true; operation="RTS"; addressmode="implied";
 			break;
 		}
+	if(addressmode == "na")
+		valid = false;
+		
+	if(valid == false)
+	{
+		//addressmode = "";
+		operation = "NOP";
+	}
+	
 	
 	if(standardInstruction == false || valid == false) 
 	{
@@ -486,11 +529,11 @@ void CPU::decodeAt(int address){
 	
 	
 	//DEBUG
-	cout << dec <<cycleCount << " - " << hex << uppercase <<address << ":";
+	cout << dec <<cycleCount << " - " << hex << uppercase << setw(4)<<setfill('0') <<address << setfill(' ')<< ":";
 	if(logging)
-		lout << hex << uppercase<< address;
+		lout << dec << cycleCount << " " << hex  << uppercase<< setw(4) << setfill('0') << address<< setfill(' ');
 	if(!valid)
-		cout << setw(spacing) << "UKN" << hex << (int)opcode;
+		cout << setw(spacing) << "UKN" << hex << (int)opcode <<setw(spacing) << addressmode;
 	else {
 		cout << setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
 		if(logging)
@@ -562,7 +605,6 @@ if(operation == "STA"){
 
 void CPU::execute(string operation, string addressmode)
 {
-	//Will migrate execution code here after the next backup
 	
 	//ADDRESSING MODES - Gives both a decoded address and a value to work with, methods use whichever they need.
 	byte firstByte, secondByte;
@@ -633,6 +675,8 @@ void CPU::execute(string operation, string addressmode)
 		incPC();
 		incPC();
 		opAddress = toAddress(firstByte,secondByte)+getY();
+		if(opAddress > 0xFFFF)
+			opAddress-=0x10000;
 		if(operation == "STA"){
 			setWaitCycles(5);
 		} else {
@@ -646,11 +690,25 @@ void CPU::execute(string operation, string addressmode)
 		//operand = readMem(toAddress(firstByte, 0)+getX());
 		incPC();
 		opAddress = toAddress(firstByte,0)+getX();
+		if(opAddress > 0xFF)
+			opAddress -= 0x100;
+			
 		if(operation == "ASL" || operation == "DEC" || operation == "INC" || operation == "LSR" || operation == "ROL" || operation == "ROR"){
 			setWaitCycles(6);
 		} else {
 			setWaitCycles(4);
 		} 
+		
+	} else if (addressmode == "zeropage,y") { 
+		//firstByte = readNext();
+		//operand = readMem(toAddress(firstByte, 0)+getX());
+		//cout << "called zp,y";
+		incPC();
+		opAddress = toAddress(firstByte,0)+getY();
+		if(opAddress > 0xFF)
+			opAddress -= 0x100;
+			
+		setWaitCycles(4);
 		
 	} else if (addressmode == "(zeropage,x)") { 
 		//AKA (Indirect, X)
@@ -675,8 +733,15 @@ void CPU::execute(string operation, string addressmode)
 	} else if (addressmode == "(zeropage),y") { 
 		//AKA (Indirect),Y)
 		firstByte = readNext(); //start address
-		byte firstAddress = readMem(firstByte, 0);
-		byte secondAddress = readMem(firstByte+1, 0);
+		byte firstAddress = readMem(toAddress(firstByte,0)); //reads address from zeropage next
+		byte secondAddress = readMem(toAddress((firstByte+1),0));
+		
+		
+		opAddress = toAddress(firstAddress, secondAddress)+getY();
+		if(opAddress > 0xFFFF)
+			opAddress-=0x10000;
+		//operand = readMem();
+		
 		
 		if(operation == "STA"){
 			setWaitCycles(6);
@@ -686,13 +751,62 @@ void CPU::execute(string operation, string addressmode)
 				addWaitCycles(1);
 		}
 		
+		
+		
+		/*LDA ($86),Y . To calculate the target address, the CPU will first fetch the 
+		address stored at zero page location $86. That address will be added to register 
+		Y to get the final target address. For LDA ($86),Y, if the address stored at $86 
+		is $4028 (memory is 0086: 28 40, remember little endian) and register Y contains 
+		$10, then the final target address would be $4038. Register A will be loaded with 
+		the contents of memory at $4038.*/
+		
 		//DEBUG
-		//cout << (int)firstAddress << endl;
-		//cout << (int)secondAddress << endl;
-
-		operand = readMem(toAddress(firstAddress, secondAddress)+getY());
+		//cout << endl << hex << "zeropage: 0x00" << firstByte <<" - first address: " <<(int)firstAddress << "- second address: " << (int)secondAddress << "- read: " << toAddress(firstAddress,secondAddress) << " + y(" << getY() <<") = " << opAddress << endl;
+		
+		
 	} else if (addressmode == "implied"){
 		setWaitCycles(2);
+	} else if (addressmode == "jumpindirect"){ //JMP 6C only
+	
+	/*The instruction contains a 16 bit address which identifies the location of the least 
+	significant byte of another 16 bit memory address which is the real target of the instruction.
+
+For example if location $0120 contains $FC and location $0121 contains $BA then the 
+instruction JMP ($0120) will cause the next instruction execution to occur at $BAFC 
+(e.g. the contents of $0120 and $0121).
+
+
+so its the toAddress(read(0120), read(0121));
+
+*/
+	
+	
+	/*The 6502's memory indirect jump instruction, JMP (<address>), is partially broken. 
+	If <address> is hex xxFF (i.e., any word ending in FF), the processor will not jump 
+	to the address stored in xxFF and xxFF+1 as expected, but rather the one defined by 
+	xxFF and xx00 (for example, JMP ($10FF) would jump to the address stored in 10FF and 
+	1000, instead of the one stored in 10FF and 1100). This defect continued through the 
+	entire NMOS line, but was corrected in the CMOS derivatives.*/
+	
+		byte firstPart = readNext();
+		byte secondPart = readNext();
+		int startAddress = toAddress(firstPart,secondPart);
+		int nextAddress;
+		if(firstPart==0xFF){
+			nextAddress = startAddress-0xFF;
+			//cout << "ends in FF! next address is " << nextAddress << endl;
+		}
+		else{
+			
+			nextAddress = startAddress+1;
+		}
+		opAddress = toAddress(readMem(startAddress), readMem(nextAddress));
+		
+		/*byte address1 = readMem(toAddress(firstAddress, secondAddress));
+		cout << endl << hex << "temp: " << temp << endl;
+		opAddress = toAddress(temp, temp+1);*/
+	
+	
 	}
 	operand = readMem(opAddress);
 	if(addressmode != "implied" && addressmode != "accumulator"){
@@ -879,12 +993,8 @@ void CPU::execute(string operation, string addressmode)
 		writeMem(opAddress, result);
 		setFlags(result);
 	} else if(operation == "JMP") { //Jump
-		addressmode = "indirect";
-		firstByte=readNext();
-		secondByte=readNext();
-		int indirectAddress = toAddress(firstByte,secondByte);
-		operand=toAddress(indirectAddress, indirectAddress+1);
-		setPC(operand);
+		
+		setPC(opAddress-1);
 		
 		//TOTDO setPC(toAddress(readMem(toAddress(firstByte, secondByte)), readMem(toAddress(firstByte, secondByte)+1)));
 		//setPC(operand);
@@ -1001,20 +1111,25 @@ void CPU::execute(string operation, string addressmode)
 			else
 				clearP(CARRY);
 			
-			writeMem(opAddress, readMem(opAddress)<<1);
+			byte temp = readMem(opAddress);		
+			writeMem(opAddress, temp<<1);
+			temp = readMem(opAddress);
+			
+			
 			if(oldcarry)
-				writeMem(opAddress, (getA()|BIT0));
+				writeMem(opAddress, (temp|BIT0));
 			else
-				writeMem(opAddress, (getA()&(~BIT0)));	
-			setFlags(readMem(opAddress));
+				writeMem(opAddress, (temp&(~BIT0)));	
+			setFlags(temp);
 		}
 		
 	} else if(operation == "ROR") { //Rotate Right TODO Test
 		bool oldcarry = checkP(CARRY);
 		bool newcarry;
 		
-		cout << endl<< "before ror: " << bitset<8>(getA()) << " after: ";
+		
 		if(addressmode == "accumulator"){
+		//cout << endl<< "before ror: " << bitset<8>(getA()) << " after: ";
 			//check carry bit
 			if((BIT0&getA())==BIT0)
 				newcarry = true;
@@ -1034,26 +1149,32 @@ void CPU::execute(string operation, string addressmode)
 				setA((getA()&(~BIT7)));
 				
 			setFlags(getA());
-			cout << bitset<8>(getA());		
+			//cout << bitset<8>(getA());		
 		}
 		else
 		{
+			//cout << endl<< "before ror: " << bitset<8>(operand) << " after: ";
+			
 			if((BIT0&operand)==BIT0)
 				newcarry = true;
 			else
 				newcarry = false;
-			
 			if(newcarry)
 				setP(CARRY);
 			else
-			clearP(CARRY);
+				clearP(CARRY);	
 			
-			writeMem(opAddress, readMem(opAddress)>>1);
+			byte temp = readMem(opAddress);		
+			writeMem(opAddress, temp>>1);
+			temp = readMem(opAddress);
+			
 			if(oldcarry)
-				writeMem(opAddress, (getA()|BIT7));
+				writeMem(opAddress, (temp|BIT7));
 			else
-				writeMem(opAddress, (getA()&(~BIT7)));	
-			setFlags(readMem(opAddress));
+				writeMem(opAddress, (temp&(~BIT7)));
+					
+			setFlags(temp);
+			//cout << bitset<8>(temp);
 		}
 	} else if(operation == "RTI") { //Return from Interrupt 
 		clearP(0xFF);
@@ -1289,9 +1410,10 @@ byte CPU::getP(){
 }
 
 void CPU::setFlags(byte operand){
-	if(operand == 0)
+	if(operand == 0){
+		clearP(ZERO);
 		setP(ZERO);
-	else
+	}else
 		clearP(ZERO);
 		
 	if((operand&0x80) == 0x80)
@@ -1303,7 +1425,7 @@ void CPU::setFlags(byte operand){
 //Pops the byte off the "bottom" of the stack, then increments the stack pointer.
 byte CPU::stackPop(){
 	byte temp = readMem(toAddress(getS()+1,0x01));
-	cout << endl << "Popping value: " << hex << (int)temp << " from address " << toAddress(getS()+1,0x01) << endl; 
+	//cout << endl << "Popping value: " << hex << (int)temp << " from address " << toAddress(getS()+1,0x01) << endl; 
 	setS(getS()+1);
 	return temp;
 }
@@ -1311,7 +1433,7 @@ byte CPU::stackPop(){
 //Pushs a value onto the "bottom" of the stack and decrements the stack pointer.
 void CPU::stackPush(byte toPush){
 	writeMem(toAddress(getS(),0x01), (int)toPush);
-	cout <<endl <<"Pushing value: " << hex << (int)toPush << " to address " << toAddress(getS(),0x01) <<endl; 
+	//cout <<endl <<"Pushing value: " << hex << (int)toPush << " to address " << toAddress(getS(),0x01) <<endl; 
 	setS(getS()-1);
 	
 }
