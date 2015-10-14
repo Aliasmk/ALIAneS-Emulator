@@ -27,7 +27,8 @@ class System {
 
 		int main2();
 		
-		void init();
+		void loadConfig();
+		bool init();
 		void run();
 		CPU getCPU();
 		

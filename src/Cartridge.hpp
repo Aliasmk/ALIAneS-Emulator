@@ -22,6 +22,8 @@ class Cartridge {
 		void openCartridge(std::string path, CPU& nesCPU);
 		byte header[0xf];
 		
+		bool validCart;
+		
 		bool verified;
 		short PRGsize16x;
 		short CHRsize8x;
@@ -31,5 +33,8 @@ class Cartridge {
 	public:
 		Cartridge(std::string cartPath, CPU& nesCPU);
 		void unloadCartridge();	
+		
+		
+		bool isValid();
 };
 #endif

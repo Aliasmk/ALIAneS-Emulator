@@ -15,13 +15,20 @@ using namespace std;
 
 
 int spacing = 15;
-int startoverride=0xc000; //set to 0 for auto
+int startoverride=0; //set to 0 for auto
+int cyclesToExecute;
 bool logging = true;
 ofstream lout;
 
 //Constructor which not used yet
 CPU::CPU(){}
 	
+void CPU::setConfig(int startAddress, int cycles){
+	startoverride=startAddress;
+	cyclesToExecute=cycles;
+}
+
+
 //Startup procedure for the CPU, following what is on NESDEV wiki
 void CPU::start(){
 	cycleCount=0;
@@ -89,16 +96,17 @@ void CPU::stop(string reason){
 //TODO: remove this var and the 20000 cycle code in cycle() (temporary)
 
 void CPU::cycle(){
-	if(cycleCount<25600)
+	if(cycleCount<cyclesToExecute)
 	{
 		if(!sleeping()){
+			writeMem(0x2002, 0xFF);
 			evaluateInterrupt(currentInterrupt);
 			decodeAt(getPC());
 			incPC();
 		}
 	}
 	else{
-		stop("Finished 25600 cycles");
+		stop("Finished cycles");
 		if(logging)
 			lout.close();	
 		//memoryDump();

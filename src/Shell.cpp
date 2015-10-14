@@ -33,7 +33,7 @@ int main()
 			delete nes;
 			nes = NULL;
 		} 
-		else if (command == "load")
+		/*else if (command == "load")
 		{
 			string cartName;
 			cout << "Cartridge File $../res/"; 
@@ -41,7 +41,7 @@ int main()
 			System* nes = new System("../res/"+cartName);
 			delete nes;
 			nes = NULL;
-		}
+		}*/
 		else if(command == "test") //"Test" loads the CPU and a blank set of memory where commands can be executed and memory interacted with
 		{
 			//Create the CPU Instance

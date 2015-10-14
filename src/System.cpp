@@ -16,30 +16,64 @@ CPU nesCPU;
 //APU nesAPU;
 Cartridge* cart;
 
-string game = "../res/nestest.nes";
+string game;
 
 System::System(){
-	cart = new Cartridge(game, nesCPU);
-	init();	
-	run();	
+	if(init()){	
+		run();	
+	}
 }
 
-System::System(string customCart){
+/*System::System(string customCart){
 	cart = new Cartridge(customCart, nesCPU);
 	init();	
 	run();	
-}
+}*/
 
+/*
 int main2(){ //Was Main before the Shell was implemented
 	System nes; //Creates an instance of the system, starting the program.
 	//nes.run();
 	return 0;
-}	
+}	*/
 
-void System::init(){
+void System::loadConfig(){
+	//System config file lists (each on its on line): Cartridge Path, Start Address, Number of Cycles
+	string configPath = "../res/alianes.cfg";
+	
+	ifstream config;
+	string cartPath;
+	int startAddress,cycles;
+	config.open(configPath);
+	if(!config){
+		cout << "No config file" << endl;
+		config.close();
+		ofstream configCreate;
+		configCreate.open(configPath);
+		configCreate << "../res/dk.nes" << endl << "0" << endl << "20000";
+		configCreate.close();
+		config.open(configPath);
+	}
+		config >> cartPath >> startAddress >> cycles;
+		config.close();
+		
+	game = cartPath;
+	getCPU().setConfig(startAddress,cycles);
+}
+
+
+bool System::init(){
+	bool status = true;
+	
+	loadConfig();
+	cart = new Cartridge(game, nesCPU);
+	if(!cart->isValid())
+		status = false;
 	tickCount=0;
 	nesCPU.start();
 	setPowerState(true);
+	
+	return status;
 }
 void System::run(){
 	

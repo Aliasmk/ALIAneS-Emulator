@@ -63,6 +63,7 @@ class CPU {
 		CPU();
 		
 		//Normal functions
+		void setConfig(int startAddress, int cycles);
 		void start(); //Begin the CPU startup sequence
 		void stop(std::string reason); //Begin the CPU shutdown sequence
 		bool running; 
