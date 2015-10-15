@@ -5,4 +5,5 @@ res/zelda.nes
 res/zelda.sav
 related_nosync/*
 res/logs/*
-res/alianes.cfg~
+bin/System
+res/logs/alianesLast.log
