@@ -14,8 +14,8 @@ After a couple months of my computer being out of commission, plus a new co-op j
 ###Testing the Emulator###
 First, download the latest version of the code and compile it. If you can use make and gcc, type `make` then `make run` to start. Otherwise compile as you would normally. Run the bin in a terminal. Typing `start` will search for a "nestest.nes" file in the /res directory, you must supply this yourself. `Test` will initialize the CPU and allow you to `read` and `write` to memory, and either `decode` and execute an opcode at a location, or `execute` an opcode, which will use the subsequent memory. `end` finishes this mode, or just type `quit` to end the program. Not much error checking for inputs has been implemented, so be careful.
 
-###What happens after the CPU is completed?###
-I'll be taking a few weeks off from programming to write detailed blog entries. From there I need to do a lot of research (again!). As far as displaying output goes, I'm thinking about using SDL for cross-platform, but that could change.
+###Regarding the Master Branch###
+Up until now I've been working completely off the master branch. Now that the CPU is functional however, I want to maintain assurance of having a working copy always avaliable, especially if I want to make some CPU modifications while I'm working on the PPU. For this reason I'm going to be much more disciplined with the master branch and only things like readme edits will be pushed through direct to master.
 
 ###Project Goals###
 
