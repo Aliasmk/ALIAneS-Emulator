@@ -6,9 +6,4 @@ res/zelda.sav
 related_nosync/*
 res/logs/*
 bin/System
-
-*.cfg~
-
-res/logs/alianesLast.log
-
 res/logs/alianesLast.log
