@@ -11,7 +11,6 @@ class Shell{
 	
 	private:
 		std::string getCommand();
-
 };
 
 #endif
