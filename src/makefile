@@ -1,6 +1,7 @@
 all:
 	g++ *.hpp
 	g++ *.cpp -o ../bin/System
+	rm *.gch
 	
 run:
 	../bin/System
