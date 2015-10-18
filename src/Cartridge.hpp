@@ -12,6 +12,7 @@
 #include <string>
 #include <iostream>
 #include "CPU.hpp"
+#include "PPU.hpp"
 
 class Cartridge {
 	typedef std::uint8_t byte;
@@ -19,7 +20,7 @@ class Cartridge {
 	private:
 		void parseHeader();
 		std::ifstream currentCart;	
-		void openCartridge(std::string path, CPU& nesCPU);
+		void openCartridge(std::string path, CPU& nesCPU, PPU& nesPPU);
 		byte header[0xf];
 		
 		bool validCart;
@@ -31,7 +32,7 @@ class Cartridge {
 		struct flag7;
 	
 	public:
-		Cartridge(std::string cartPath, CPU& nesCPU);
+		Cartridge(std::string cartPath, CPU& nesCPU, PPU& nesPPU);
 		void unloadCartridge();	
 		
 		

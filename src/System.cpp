@@ -7,27 +7,31 @@
 
 #include "System.hpp"
 #include "CPU.hpp"
+#include "PPU.hpp"
 #include "Cartridge.hpp"
+#include "SDLrender.hpp"
+
 
 using namespace std;
 
 CPU nesCPU;
-//PPU nesPPU;
+PPU nesPPU;
 //APU nesAPU;
 Cartridge* cart;
+SDLrender* renderer;
 
 string game;
 
 System::System(){
-	if(init()){	
-		run();	
+	if(init()){
+		run();
 	}
 }
 
 /*System::System(string customCart){
 	cart = new Cartridge(customCart, nesCPU);
-	init();	
-	run();	
+	init();
+	run();
 }*/
 
 /*
@@ -40,7 +44,7 @@ int main2(){ //Was Main before the Shell was implemented
 void System::loadConfig(){
 	//System config file lists (each on its on line): Cartridge Path, Start Address, Number of Cycles
 	string configPath = "../res/alianes.cfg";
-	
+
 	ifstream config;
 	string cartPath;
 	int startAddress,cycles;
@@ -56,7 +60,7 @@ void System::loadConfig(){
 	}
 		config >> cartPath >> startAddress >> cycles;
 		config.close();
-		
+
 	game = cartPath;
 	getCPU().setConfig(startAddress,cycles);
 }
@@ -64,22 +68,29 @@ void System::loadConfig(){
 
 bool System::init(){
 	bool status = true;
-	
+
 	loadConfig();
-	cart = new Cartridge(game, nesCPU);
+
+	cart = new Cartridge(game, nesCPU, nesPPU);
 	if(!cart->isValid())
 		status = false;
+
 	tickCount=0;
+	
+  	renderer = new SDLrender(); //TODO destroy
+	renderer->initSDL();
+	nesPPU.start();
 	nesCPU.start();
 	setPowerState(true);
-	
+
 	return status;
 }
 void System::run(){
-	
+
 	while(nesCPU.running && getPowerState()){
 		tick();
-	}	
+	}
+	renderer->closeSDL();
 }
 void System::tick(){
 	nesCPU.cycle();

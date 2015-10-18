@@ -120,7 +120,7 @@ byte CPU::readNext(){
 //Writes given value to the selected address
 void CPU::writeMem(int address, byte value){	
 	//Memory Mirroring
-	//Not sure what this section is for
+	//Not sure what this section in memory is for
 	if(address >= 0x0800 && address <= 0x1FFF){
 		//Mirror every 0x0800 bytes
 		int offset = address%0x0800;	
