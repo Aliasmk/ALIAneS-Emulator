@@ -2,7 +2,7 @@
 
 all:
 	g++ *.hpp
-	g++ *.cpp -o ../bin/System
+	g++ *.cpp -o ../bin/System -framework SDL2
 	rm *.gch
 run:
 	../bin/System
