@@ -2,8 +2,8 @@
 
 all:
 	g++ *.hpp
-	g++ *.cpp -o ../bin/System -framework SDL2
-
+	g++ *.cpp -o ../bin/System
+	rm *.gch
 run:
 	../bin/System
 
