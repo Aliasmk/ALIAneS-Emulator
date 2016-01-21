@@ -17,7 +17,7 @@ using namespace std;
 int spacing = 15;
 int startoverride=0; //set to 0 for auto
 int cyclesToExecute;
-bool logging = true;
+bool logging = false;
 ofstream lout;
 
 //Constructor which not used yet
@@ -541,12 +541,13 @@ void CPU::decodeAt(int address){
 		operation = "UKN";
 	
 	//DEBUG Output
-	cout << dec <<cycleCount << " - " << hex << uppercase << setw(4)<<setfill('0') <<address << setfill(' ')<< ":"<< setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
+	
+	//cout << dec <<cycleCount << " - " << hex << uppercase << setw(4)<<setfill('0') <<address << setfill(' ')<< ":"<< setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
 	if(logging)
 		lout << dec << cycleCount << " " << hex  << uppercase<< setw(4) << setfill('0') << address<< setfill(' ') << setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
 	execute(operation, addressmode);
 	
-	cout << endl;
+	//cout << endl;
 	
 	if(logging)
 		lout << endl;
@@ -692,14 +693,14 @@ void CPU::execute(string operation, string addressmode)
 	}
 	operand = readMem(opAddress);
 	if(addressmode != "implied" && addressmode != "accumulator"){	
-		cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand; // << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
+		//cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand; // << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
 	}
 	else
 	{
-		cout << setw(spacing)<< hex << "-" << setw(spacing) << "-";
+		//cout << setw(spacing)<< hex << "-" << setw(spacing) << "-";
 	}
 	
-	printDebugStatus(getPC());
+	//printDebugStatus(getPC());
 	
 	//INSTRUCTIONS
 	if(operation == "ADC"){ //Add with Carry

@@ -79,7 +79,7 @@ bool System::init(){
 	
   	renderer = new SDLrender(); //TODO destroy
 	renderer->initSDL();
-	nesPPU.start();
+	nesPPU.start(getRenderer());
 	nesCPU.start();
 	setPowerState(true);
 
@@ -93,12 +93,24 @@ void System::run(){
 	renderer->closeSDL();
 }
 void System::tick(){
+	//Run CPU then run PPU 3 times.
 	nesCPU.cycle();
+	nesPPU.cycle();
+	nesPPU.cycle();
+	nesPPU.cycle();
 	tickCount++;
 }
 
 CPU System::getCPU(){
 	return nesCPU;
+}
+
+PPU System::getPPU(){
+	return nesPPU;
+}
+
+SDLrender* System::getRenderer(){
+	return renderer;
 }
 
 void System::setPowerState(bool state){

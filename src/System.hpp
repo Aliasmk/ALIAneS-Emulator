@@ -12,6 +12,8 @@
 #include <iostream>
 #include <cstdlib>
 #include "CPU.hpp"
+#include "PPU.hpp"
+#include "SDLrender.hpp"
 
 
 
@@ -31,6 +33,8 @@ class System {
 		bool init();
 		void run();
 		CPU getCPU();
+		PPU getPPU();
+		SDLrender* getRenderer();
 		
 		void setPowerState(bool state);
 		bool getPowerState();

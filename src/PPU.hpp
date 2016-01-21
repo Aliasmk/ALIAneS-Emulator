@@ -9,6 +9,7 @@
 #define	NESPPU
 
 #include <iostream>
+#include "SDLrender.hpp"
 
 class PPU {
 	private:
@@ -113,7 +114,8 @@ class PPU {
 	
 	//4014 - OAMDMA - WRITE
 	
-	//Internal interface functions
+	//Internal interface functions 
+	//TODO write these into code
 	void writePPUCTRL();
 	void writePPUMASK();
 	byte readPPUSTATUS();
@@ -129,12 +131,15 @@ class PPU {
 	
 	public:
 	PPU();
-	void start();
+	void start(SDLrender* r);
 	void cycle();
 	void writeMem(int address, byte value);
 	byte readMem(int address);
 	byte readRegister(int accessReg, int readWrite);
 
+	int ppuR;
+	int ppuG;
+	int ppuB;
 
 };
 #endif
