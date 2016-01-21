@@ -57,11 +57,11 @@ class CPU {
 		byte p; //Processor Flags
 		byte memory[0xFFFF]; //Memory
 		short cycleWait;
-		int cycleCount;
+		
 		byte resetVector; //Memory location to begin execution from
 	public:
 		CPU();
-		
+		int cycleCount;
 		//Normal functions
 		void setConfig(int startAddress, int cycles);
 		void start(); //Begin the CPU startup sequence

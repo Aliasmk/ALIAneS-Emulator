@@ -98,6 +98,7 @@ void System::tick(){
 	nesPPU.cycle();
 	nesPPU.cycle();
 	nesPPU.cycle();
+	
 	tickCount++;
 }
 

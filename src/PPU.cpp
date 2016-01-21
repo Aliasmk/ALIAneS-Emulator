@@ -23,7 +23,7 @@ void PPU::start(SDLrender* r){
 }
 
 void PPU::cycle(){
-	
+	//cout << "PPU blip" << endl;
 	if(cycles < 340)
 		cycles++;
 	else {
@@ -34,15 +34,16 @@ void PPU::cycle(){
 			scanLine = 0;
 			frame++;
 			SDLrenderer->onFrameEnd();
+			cout << "PPU render: " << frame << endl;
 		}
 	}
 	
 	//cout << "PPU cycle " << cycles << " in scanline " << scanLine << " of frame " << frame << endl;
 	
 	
-	ppuR = cycles%255;
-	ppuG = scanLine%255;
-	ppuB = frame%255;
+	ppuR = frame;
+	ppuG = (scanLine%255);
+	ppuB = (cycles%255);
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
