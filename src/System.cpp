@@ -90,6 +90,7 @@ void System::run(){
 	while(nesCPU.running && getPowerState()){
 		tick();
 	}
+	nesPPU.stop();
 	renderer->closeSDL();
 }
 void System::tick(){

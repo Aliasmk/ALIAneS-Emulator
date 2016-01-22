@@ -15,6 +15,12 @@ class PPU {
 	private:
 	typedef std::uint8_t byte;
 	
+	long startTime;
+	long endTime;
+	
+	
+	
+	
 	//MEMORY//
 	
 	//PPU's internal memory contains pattern data, nametables and other information.
@@ -132,6 +138,7 @@ class PPU {
 	public:
 	PPU();
 	void start(SDLrender* r);
+	void stop();
 	void cycle();
 	void writeMem(int address, byte value);
 	byte readMem(int address);

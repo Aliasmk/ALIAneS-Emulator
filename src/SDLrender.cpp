@@ -59,12 +59,12 @@ void SDLrender::drawPixel(int x, int y, int red, int green, int blue){
 
 
 void SDLrender::closeSDL(){
-  //SDL_DestroyRenderer(render);
+  SDL_DestroyRenderer(render);
 
-  //SDL_DestroyWindow(window);
-  //window = NULL;
+  SDL_DestroyWindow(window);
+  window = NULL;
 
-  //SDL_Quit();
+  SDL_Quit();
 }
 
 void SDLrender::renderPixelCallback(){

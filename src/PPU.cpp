@@ -6,6 +6,8 @@
  */
 
 #include "PPU.hpp"
+#include <math.h>
+#include <time.h>
 using namespace std;
 
 typedef uint8_t byte;
@@ -19,7 +21,15 @@ PPU::PPU(){
 
 void PPU::start(SDLrender* r){
 	SDLrenderer = r;
+	startTime = time(0);
 	cout << "PPU Initialization: Complete" << endl;
+}
+
+void PPU::stop(){
+	endTime = time(0);
+	int delta = endTime-startTime;
+	double FPS = frame/(delta);
+	cout << dec << "Average FPS: " << FPS << " (" << frame << " frames in " << delta << " seconds)" << endl;
 }
 
 void PPU::cycle(){
@@ -34,16 +44,16 @@ void PPU::cycle(){
 			scanLine = 0;
 			frame++;
 			SDLrenderer->onFrameEnd();
-			cout << "PPU render: " << frame << endl;
+			//cout << "PPU render: " << frame << endl;
 		}
 	}
 	
 	//cout << "PPU cycle " << cycles << " in scanline " << scanLine << " of frame " << frame << endl;
 	
 	
-	ppuR = frame;
-	ppuG = (scanLine%255);
-	ppuB = (cycles%255);
+	ppuR = frame%255;
+	ppuG = (scanLine%255);//+(frame%255)/5;
+	ppuB = (cycles%255) - (frame%255)*2;
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
