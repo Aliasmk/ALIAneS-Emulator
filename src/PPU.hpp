@@ -15,8 +15,12 @@ class PPU {
 	private:
 	typedef std::uint8_t byte;
 	
+	//FPS counter
 	long startTime;
 	long endTime;
+	
+	//VRAM address
+	int vramAddr;
 	
 	
 	
@@ -78,28 +82,29 @@ class PPU {
 	};
 	
 	//2000 - PPUCTRL - WRITE
-	byte nmiEnable;
-	byte ppuMode;
-	byte spriteHeight;
-	byte backgroundPatternTable;
-	byte spritePatternTable;
-	byte vramIncrementMode;
+	bool nmiEnable;
+	bool ppuMode;
+	bool spriteHeight;
+	bool backgroundPatternTable;
+	bool spritePatternTable;
+	bool vramIncrementMode;
+	int baseNametableAddress;
 	
 	
 	//2001 - PPUMASK - WRITE
-	byte emphasizeBlue;
-	byte emphasizeGreen;
-	byte emphasizeRed;
-	byte showSprites;
-	byte showBackground;
-	byte showLeftSprites;
-	byte showLeftBackground;
-	byte greyscale;
+	bool emphasizeBlue;
+	bool emphasizeGreen;
+	bool emphasizeRed;
+	bool showSprites;
+	bool showBackground;
+	bool showLeftSprites;
+	bool showLeftBackground;
+	bool greyscale;
 	
 	//2002 - PPUSTATUS - READ
-	byte vblankStatus;
-	byte sprite0hit;
-	byte spriteOverflow;
+	bool vblankStatus;
+	bool sprite0hit;
+	bool spriteOverflow;
 	
 	//2003 - OAMADDR - WRITE
 	byte oamAddress;
@@ -108,10 +113,12 @@ class PPU {
 	byte oamValue;
 	
 	//2005 - PPUSCROLL - WRITE 2x
+	bool scrollFirstWrite;
 	byte ppuscroll_scrollPosX;
 	byte ppuscroll_scrollPosY;
 	
 	//2006 - PPUADDR - WRITE 2x
+	bool addrFirstWrite;
 	byte ppuaddr_upperByte;
 	byte ppuaddr_lowerByte;
 	
@@ -120,20 +127,9 @@ class PPU {
 	
 	//4014 - OAMDMA - WRITE
 	
-	//Internal interface functions 
-	//TODO write these into code
-	void writePPUCTRL();
-	void writePPUMASK();
-	byte readPPUSTATUS();
-	void writeOAMADDR();
-	void writeOAMDATA();
-	byte readOAMDATA();
-	void writePPUSCROLL();
-	void writePPUADDR();
-	void writePPUDATA();
-	byte readPPUDATA();
-	void writeOAMDMA();
 	
+	
+	void testReadPatternTable();
 	
 	public:
 	PPU();
@@ -147,6 +143,20 @@ class PPU {
 	int ppuR;
 	int ppuG;
 	int ppuB;
+	
+	//Internal interface functions 
+	//TODO write these into code
+	void writePPUCTRL(byte in);
+	void writePPUMASK(byte in);
+	byte readPPUSTATUS();
+	void writeOAMADDR(byte in);
+	void writeOAMDATA(byte in);
+	byte readOAMDATA();
+	void writePPUSCROLL(byte in);
+	void writePPUADDR(byte in);
+	void writePPUDATA(byte in);
+	byte readPPUDATA();
+	void writeOAMDMA();
 
 };
 #endif

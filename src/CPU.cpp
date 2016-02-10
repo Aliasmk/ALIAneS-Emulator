@@ -79,6 +79,7 @@ void CPU::stop(string reason){
 //Function to be called each time the system cycles, to perform CPU tasks.
 void CPU::cycle(){
 	//TODO cycles to execute is temporary. Set using config file
+	//cout << "CPU" << endl;
 	if(cycleCount<cyclesToExecute)
 	{
 		if(!sleeping()){
