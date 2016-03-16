@@ -32,8 +32,8 @@ class System {
 		void loadConfig();
 		bool init();
 		void run();
-		CPU getCPU();
-		PPU getPPU();
+		CPU* getCPU();
+		PPU* getPPU();
 		SDLrender* getRenderer();
 		
 		void setPowerState(bool state);

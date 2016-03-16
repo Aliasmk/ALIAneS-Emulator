@@ -24,12 +24,12 @@ struct Cartridge::flag7 {
 	bool VS: 1;					//VS
 };
 
-Cartridge::Cartridge(std::string cartPath, CPU::CPU& nesCPU, PPU::PPU& nesPPU){
+Cartridge::Cartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *nesPPU){
 	openCartridge(cartPath, nesCPU, nesPPU);
 }
 
 //Open the file stream, parse the header and based on that information, allocate CPU memory for program rom.
-void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU, PPU::PPU& nesPPU){
+void Cartridge::openCartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *nesPPU){
 	validCart = false;
 	//Open file as binary and check that it opened
 	currentCart.open(cartPath, std::ios::binary);
@@ -41,7 +41,7 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU, PPU::PPU& 
 			if(PRGsize16x == 0x02){
 				std::cout << "32K PRG loaded." << std::endl;
 				for(int offset = 0x0; offset<0x8000; offset++){
-					nesCPU.writeMem(0x8000+offset,(byte)currentCart.get());
+					nesCPU->writeMem(0x8000+offset,(byte)currentCart.get());
 				}
 				validCart = true;
 			} else if(PRGsize16x == 0x01) {
@@ -50,10 +50,10 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU, PPU::PPU& 
 				//write mem function to mirror data automatically based on conditions,
 				//such as writing to ram (4 times mirrored) or PRG with a 16k rom.
 				for(int offset = 0x0; offset<0x4000; offset++){
-					nesCPU.writeMem(0x8000+offset,(byte)currentCart.get());
+					nesCPU->writeMem(0x8000+offset,(byte)currentCart.get());
 				}
 				for(int offset = 0x0; offset<0x4000; offset++){
-					nesCPU.writeMem(0xc000+offset,nesCPU.readMem(0x8000+offset));
+					nesCPU->writeMem(0xc000+offset,nesCPU->readMem(0x8000+offset));
 				}
 				validCart = true;
 			}
@@ -64,7 +64,7 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU, PPU::PPU& 
 			if(CHRsize8x == 0x01){
 				std::cout << "8K CHR memory loaded." << std::endl;
 				for(int offset = 0x0; offset<0x1FFF; offset++){
-					nesPPU.writeMem(0x0+offset,(byte)currentCart.get());
+					nesPPU->writeMem(0x0+offset,(byte)currentCart.get());
 				}
 			} else {
 				std::cout << "Error - CHR-ROM too large (>8k) or too small (<8k)." << std::endl;

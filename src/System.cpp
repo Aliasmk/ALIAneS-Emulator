@@ -13,8 +13,8 @@
 
 using namespace std;
 
-CPU nesCPU;
-PPU nesPPU;
+CPU* nesCPU;
+PPU* nesPPU;
 //APU nesAPU;
 Cartridge* cart;
 SDLrender* renderer;
@@ -62,52 +62,54 @@ void System::loadConfig(){
 		config.close();
 
 	game = cartPath;
-	getCPU().setConfig(startAddress,cycles);
+	getCPU()->setConfig(startAddress,cycles);
 }
 
 
 bool System::init(){
 	bool status = true;
-
+	nesCPU = new CPU();
+	nesPPU = new PPU();
+	renderer = new SDLrender(); //TODO destroy
+	renderer->initSDL();
+	
 	loadConfig();
-
 	cart = new Cartridge(game, nesCPU, nesPPU);
 	if(!cart->isValid())
 		status = false;
-
+  	
+	nesPPU->start(getRenderer());
+	nesCPU->start();
+	
+	setPowerState(true);
 	tickCount=0;
 	
-  	renderer = new SDLrender(); //TODO destroy
-	renderer->initSDL();
-	nesPPU.start(getRenderer());
-	nesCPU.start();
-	setPowerState(true);
-
+	
 	return status;
 }
 void System::run(){
 
-	while(nesCPU.running && getPowerState()){
+	while(nesCPU->running && getPowerState()){
 		tick();
 	}
-	nesPPU.stop();
+	nesPPU->stop();
 	renderer->closeSDL();
 }
 void System::tick(){
 	//Run CPU then run PPU 3 times.
-	nesCPU.cycle();
-	nesPPU.cycle();
-	nesPPU.cycle();
-	nesPPU.cycle();
+	nesCPU->cycle();
+	nesPPU->cycle();
+	nesPPU->cycle();
+	nesPPU->cycle();
 	
 	tickCount++;
 }
 
-CPU System::getCPU(){
+CPU* System::getCPU(){
 	return nesCPU;
 }
 
-PPU System::getPPU(){
+PPU* System::getPPU(){
 	return nesPPU;
 }
 

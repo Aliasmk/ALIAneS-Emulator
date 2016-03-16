@@ -20,7 +20,7 @@ class Cartridge {
 	private:
 		void parseHeader();
 		std::ifstream currentCart;	
-		void openCartridge(std::string path, CPU& nesCPU, PPU& nesPPU);
+		void openCartridge(std::string path, CPU *nesCPU, PPU *nesPPU);
 		byte header[0xf];
 		
 		bool validCart;
@@ -32,7 +32,7 @@ class Cartridge {
 		struct flag7;
 	
 	public:
-		Cartridge(std::string cartPath, CPU& nesCPU, PPU& nesPPU);
+		Cartridge(std::string cartPath, CPU* nesCPU, PPU* nesPPU);
 		void unloadCartridge();	
 		
 		
