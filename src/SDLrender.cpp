@@ -14,7 +14,9 @@ using namespace std;
 SDL_Window* window = NULL;
 SDL_Renderer* render = NULL;
 
-SDLrender::SDLrender(){}
+SDLrender::SDLrender(){
+	cout << "Renderer is now on." << endl;
+}
 
 bool SDLrender::initSDL(){
   bool status = true;

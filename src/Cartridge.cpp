@@ -6,8 +6,8 @@
  */
 
 #include "Cartridge.hpp"
-#include "CPU.hpp"
-#include "PPU.hpp"
+
+
 
 //Bitsets for flags 6 and 7 of the header line
 struct Cartridge::flag6 {

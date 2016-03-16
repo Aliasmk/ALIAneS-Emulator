@@ -6,10 +6,9 @@
  */
 
 #include "System.hpp"
-#include "CPU.hpp"
-#include "PPU.hpp"
+
 #include "Cartridge.hpp"
-#include "SDLrender.hpp"
+
 
 
 using namespace std;
@@ -23,6 +22,7 @@ SDLrender* renderer;
 string game;
 
 System::System(){
+	cout << "NES System is now running." <<endl;
 	if(init()){
 		run();
 	}

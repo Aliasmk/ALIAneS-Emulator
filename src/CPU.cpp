@@ -21,7 +21,9 @@ bool logging = false;
 ofstream lout;
 
 //Constructor which not used yet
-CPU::CPU(){}
+CPU::CPU(){
+	cout << "NES CPU is now on." <<endl;
+}
 	
 void CPU::setConfig(int startAddress, int cycles){
 	startoverride=startAddress;

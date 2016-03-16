@@ -9,11 +9,21 @@
 #include "System.hpp"
 #include "CPU.hpp"
 
-typedef std::uint8_t byte;
 
 using namespace std;
 
-int main()
+typedef uint8_t byte;
+
+Shell::Shell(){
+	cout << "NES Shell has now started." << endl;
+}
+
+int main(){
+	Shell instance;
+	return instance.runShell();
+}
+
+int Shell::runShell()
 {
 	string command;
 	//Presents an interactive shell front end to read and write memory as well as execute opcodes in a sandbox.
@@ -28,6 +38,7 @@ int main()
 		if(command == "start") //"Start" starts the emulator as normally before
 		{
 			//Create the Emulator Instance
+			
 			System* nes = new System();
 			//Clears the memory used by the Emulator
 			delete nes;
@@ -123,15 +134,6 @@ int main()
 			cout<< "Unknown Command" << endl;
 		}
 	}
- 	
-	
 	
 	return 0;
 }
-
-
-//void readInput(int args, string input, string[] & split)
-//{
-//	split[] = new string[args];
-	
-//}

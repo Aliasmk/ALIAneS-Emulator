@@ -6,6 +6,7 @@
  */
 
 #include "PPU.hpp"
+
 #include <math.h>
 #include <time.h>
 using namespace std;
@@ -15,7 +16,7 @@ typedef uint8_t byte;
 SDLrender* SDLrenderer;
 
 PPU::PPU(){
-	
+	cout << "NES PPU is now on." <<endl;
 }
 
 void PPU::start(SDLrender* r){
@@ -156,7 +157,8 @@ void PPU::writePPUADDR(byte in){
 
 void PPU::writePPUDATA(byte in){
 	//TODO PPUDATA WRITE
-	
+	cout << "PPUWRITE: " <<  hex << in << " to vram addr " << hex << vramAddr << endl;
+	writeMem(in, vramAddr);
 	
 	if(vramIncrementMode)
 		vramAddr+=1;
@@ -167,7 +169,13 @@ void PPU::writePPUDATA(byte in){
 byte PPU::readPPUDATA(){
 	//TODO PPUDATA READ
 	
-	return 0;
+	byte out = readMem(vramAddr);
+	cout << "PPUREAD: " <<  hex << out << " from vram addr " << hex << vramAddr << endl;
+	if(vramIncrementMode)
+		vramAddr+=1;
+	else
+		vramAddr+=32;
+	return out;
 }
 
 void PPU::writeOAMDMA(){

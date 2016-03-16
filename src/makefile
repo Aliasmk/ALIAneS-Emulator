@@ -1,9 +1,15 @@
+CC=g++
+CFLAGS=-framework SDL2 -I.
+CFILE=Cartridge.cpp CPU.cpp PPU.cpp SDLrender.cpp Shell.cpp System.cpp
+HEAD=Cartridge.hpp CPU.hpp PPU.hpp SDLrender.hpp Shell.hpp System.hpp
+OBJ=Cartridge.o CPU.o PPU.o SDLrender.o Shell.o System.o
 
+all: 
+	
+	$(CC) -c $(CFILE) 
+	$(CC) -o ../bin/System $(OBJ) $(CFLAGS)
+	rm *.o
 
-all:
-	g++ *.hpp
-	g++ *.cpp -o ../bin/System -framework SDL2
-	rm *.gch
 run:
 	../bin/System
 
