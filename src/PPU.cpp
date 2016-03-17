@@ -6,7 +6,6 @@
  */
 
 #include "PPU.hpp"
-
 #include <math.h>
 #include <time.h>
 using namespace std;
@@ -14,16 +13,19 @@ using namespace std;
 typedef uint8_t byte;
 
 SDLrender* SDLrenderer;
+//CPU* ptr_nesCPU;
+
 
 PPU::PPU(){
 	cout << "NES PPU is now on." <<endl;
-	
+	//ptr_nesCPU = nCPU; //address of?
 }
 
 void PPU::start(SDLrender* r){
 	SDLrenderer = r;
 	startTime = time(0);
 	addrFirstWrite = true;
+	vblank = false;
 	for(int i = 0; i<0x3FFF; i++){
 		ppuWriteMem(i, 0);
 	}
@@ -40,7 +42,7 @@ void PPU::stop(){
 	}
 	else 
 	{
-		cout << "Frame rate count error (too fast)" << endl;
+		cout << "Frame rate count error (too fast) " << frame << " frames"<< endl;
 	}
 }
 
@@ -56,6 +58,21 @@ byte PPU::ppuReadMem(int address){
 void PPU::cycle(){
 	//cout << "PPU" << endl;
 	//cout << "vram address: " << vramAddr << endl;
+	
+	//if(scanLine == 241 && cycles==1 && nmiEnable){
+	if(scanLine == 241 && cycles==1){
+		vblank = true;
+		vblankStatus = true;
+		//ptr_nesCPU->triggerInterrupt(1);
+	}
+	if(scanLine == 261 && cycles==1){
+		vblank = false;
+		vblankStatus = false;
+		vblankSeen = false;
+		sprite0hit = false;
+		spriteOverflow = false;
+	}
+	
 	if(cycles < 340)
 		cycles++;
 	else {
@@ -65,18 +82,44 @@ void PPU::cycle(){
 		else{
 			scanLine = 0;
 			frame++;
+			/*cout << endl << endl;
+			
+			for(int y = 0; y<=29;y++){
+				for(int x = 0; x<31; x++)
+				{
+					cout << << " ";				
+				}
+				cout << endl;
+			}
+			
+			
+			cout << endl << endl;*/
 			SDLrenderer->onFrameEnd();
 			//cout << "PPU render: " << frame << endl;
 		}
 	}
 	
-	//cout << "PPU cycle " << cycles << " in scanline " << scanLine << " of frame " << frame << endl;
-
-
 	
-	ppuR = frame%255;
-	ppuG = (scanLine%255);//+(frame%255)/5;
-	ppuB = (cycles%255) - (frame%255)*2;
+	
+	
+	//cout << "PPU cycle " << cycles << " in scanline " << scanLine << " of frame " << frame << endl;
+	
+	int color;
+	color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
+	if(color == 0x24){
+		color = 0;
+	}else{
+		color *= 5;
+		if(color > 0xFF)
+			color = 0xFF;
+	}
+	ppuR = color;
+	ppuG = color;
+	ppuB = color;
+	
+	//ppuR = frame%255;
+	//ppuG = (scanLine%255);//+(frame%255)/5;
+	//ppuB = (cycles%255) - (frame%255)*2;
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
@@ -138,10 +181,8 @@ void PPU::writePPUMASK(byte in){
 }
 
 byte PPU::readPPUSTATUS(){
-	//DEBUG forces vblank check pass
-	
-	vblankStatus=true;
-	return (int)vblankStatus*0x80 + (int)sprite0hit*0x40 + (int)spriteOverflow*0x20;
+	vblankStatus = false;
+	return (int)vblank*0x80 + (int)sprite0hit*0x40 + (int)spriteOverflow*0x20;
 	
 }
 	
@@ -202,14 +243,18 @@ byte PPU::readPPUDATA(){
 	
 	byte out = ppuReadMem(vramAddr);
 	cout << endl << "PPUDATA READ: " <<  hex << (int)out << " from vram addr " << hex << vramAddr << endl;
-	if(vramIncrementMode)
+	/*if(vramIncrementMode)
 		vramAddr+=32;
 	else
-		vramAddr+=1;
+		vramAddr+=1;*/
 	return out;
 }
 
 void PPU::writeOAMDMA(){
 	//TODO OAM DATA WRITE
 	
+}
+
+bool PPU::getNMI(){
+	return nmiEnable;
 }

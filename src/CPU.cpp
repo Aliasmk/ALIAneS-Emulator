@@ -82,6 +82,12 @@ void CPU::stop(string reason){
 
 //Function to be called each time the system cycles, to perform CPU tasks.
 void CPU::cycle(){
+	if(ptr_nesPPU->vblank==true && ptr_nesPPU->vblankSeen==false && ptr_nesPPU->getNMI()==true){
+		ptr_nesPPU->vblankSeen=true;
+		triggerInterrupt(NMI);
+	}
+	
+	
 	//TODO cycles to execute is temporary. Set using config file
 	if(cycleCount<cyclesToExecute)
 	{
@@ -121,7 +127,7 @@ byte CPU::readMem(int address){
 				cout << "2001 PPUMASK read ERROR! ";
 			break;
 			case 2:
-				cout << "2002 PPUSTATUS read ";
+				cout << "2002 PPUSTATUS read " << endl;
 				return ptr_nesPPU->readPPUSTATUS();
 			break;
 			case 3:
@@ -250,6 +256,7 @@ void CPU::evaluateInterrupt(int & interruptType){
 			setWaitCycles(7);
 			setPC(toAddress(readMem(0xFFFA),readMem(0xFFFB)));
 			setP(BRK);
+			cout << endl <<"NMI interrupt has been thrown" << endl;
 		break;
 		case IRQ:
 			//Push pc and flags to stack, setpc to IRQ (reset) interrupt vector and set I. 7 cycles

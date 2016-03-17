@@ -11,6 +11,7 @@
 #include <iostream>
 #include "SDLrender.hpp"
 
+
 class PPU {
 	private:
 	typedef std::uint8_t byte;
@@ -144,6 +145,9 @@ class PPU {
 	int ppuG;
 	int ppuB;
 	
+	bool vblank;
+	bool vblankSeen;
+	
 	//Internal interface functions 
 	//TODO write these into code
 	void writePPUCTRL(byte in);
@@ -157,6 +161,6 @@ class PPU {
 	void writePPUDATA(byte in);
 	byte readPPUDATA();
 	void writeOAMDMA();
-
+	bool getNMI();
 };
 #endif
