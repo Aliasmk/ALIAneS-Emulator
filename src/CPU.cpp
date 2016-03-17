@@ -6,6 +6,7 @@
  */
 
 #include "CPU.hpp"
+
 #include <bitset>
 
 //Define "byte" to be a bitset of 8
@@ -13,7 +14,7 @@ typedef uint8_t byte;
 
 using namespace std;
 
-
+PPU* ptr_nesPPU;
 int spacing = 15;
 int startoverride=0; //set to 0 for auto
 int cyclesToExecute;
@@ -21,8 +22,9 @@ bool logging = false;
 ofstream lout;
 
 //Constructor which not used yet
-CPU::CPU(){
+CPU::CPU(PPU* nPPU){
 	cout << "NES CPU is now on." <<endl;
+	ptr_nesPPU = nPPU;
 }
 	
 void CPU::setConfig(int startAddress, int cycles){
@@ -81,7 +83,6 @@ void CPU::stop(string reason){
 //Function to be called each time the system cycles, to perform CPU tasks.
 void CPU::cycle(){
 	//TODO cycles to execute is temporary. Set using config file
-	//cout << "CPU" << endl;
 	if(cycleCount<cyclesToExecute)
 	{
 		if(!sleeping()){
@@ -103,6 +104,45 @@ void CPU::cycle(){
 
 //Returns a memory value from selected address
 byte CPU::readMem(int address){
+	
+	//cout << "reading memory - ";
+	if(address >= 0x2000 && address <=0x3FFF)
+	{
+		int offset = address%8;
+		//cout << " - ";
+		switch(offset)
+		{
+			
+			case 0:
+				cout << "2000 PPUCTRL read ERROR! ";
+				
+			break;
+			case 1:
+				cout << "2001 PPUMASK read ERROR! ";
+			break;
+			case 2:
+				cout << "2002 PPUSTATUS read ";
+				return ptr_nesPPU->readPPUSTATUS();
+			break;
+			case 3:
+				cout << "2003 OAMADDR read ERROR! ";
+			break;
+			case 4:
+				cout << "2004 OAMDATA read ";
+				return ptr_nesPPU->readOAMDATA();
+			break;
+			case 5:
+				cout << "2005 PPUSCROLL read ERROR! ";
+			break;
+			case 6:
+				cout << "2006 PPUADDR read ERROR! ";
+			break;
+			case 7:
+				cout << "2007 PPUDATA read ";
+				return ptr_nesPPU->readPPUDATA();
+			break;
+		}
+	}
 	return memory[address];
 }
 
@@ -137,6 +177,41 @@ void CPU::writeMem(int address, byte value){
 		int offset = address%0x8;
 		for(int i = 0x2000; i<0x3FFF; i+=8){
 			memory[i+offset] = value;
+		}
+		
+		switch(offset)
+		{
+			case 0:
+				cout << "2000 PPUCTRL write" << endl;
+				ptr_nesPPU->writePPUCTRL(value);
+			break;
+			case 1:
+				cout << "2001 PPUMASK write" << endl;
+				ptr_nesPPU->writePPUMASK(value);
+			break;
+			case 2:
+				cout << "2002 PPUSTATUS write ERROR!" << endl;
+			break;
+			case 3:
+				cout << "2003 OAMADDR write" << endl;
+				ptr_nesPPU->writeOAMADDR(value);
+			break;
+			case 4:
+				cout << "2004 OAMDATA write" << endl;
+				ptr_nesPPU->writeOAMDATA(value);
+			break;
+			case 5:
+				cout << "2005 PPUSCROLL write" << endl;
+				ptr_nesPPU->writePPUSCROLL(value);
+			break;
+			case 6:
+				cout << "2006 PPUADDR write" << endl;
+				ptr_nesPPU->writePPUADDR(value);
+			break;
+			case 7:
+				cout << "2007 PPUDATA write" << endl;
+				ptr_nesPPU->writePPUDATA(value);
+			break;
 		}
 	}
 	else{
@@ -545,12 +620,12 @@ void CPU::decodeAt(int address){
 	
 	//DEBUG Output
 	
-	//cout << dec <<cycleCount << " - " << hex << uppercase << setw(4)<<setfill('0') <<address << setfill(' ')<< ":"<< setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
+	cout << dec <<cycleCount << " - " << hex << uppercase << setw(4)<<setfill('0') <<address << setfill(' ')<< ":"<< setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
 	if(logging)
 		lout << dec << cycleCount << " " << hex  << uppercase<< setw(4) << setfill('0') << address<< setfill(' ') << setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
 	execute(operation, addressmode);
 	
-	//cout << endl;
+	cout << endl;
 	
 	if(logging)
 		lout << endl;
@@ -694,16 +769,21 @@ void CPU::execute(string operation, string addressmode)
 		}
 		opAddress = toAddress(readMem(startAddress), readMem(nextAddress));
 	}
+	
+	//TODO DETECT A PPU ADDRESS READ
+
 	operand = readMem(opAddress);
+	
+	//DEBUG
 	if(addressmode != "implied" && addressmode != "accumulator"){	
-		//cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand; // << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
+		cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand; // << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
 	}
 	else
 	{
-		//cout << setw(spacing)<< hex << "-" << setw(spacing) << "-";
+		cout << setw(spacing)<< hex << "-" << setw(spacing) << "-";
 	}
 	
-	//printDebugStatus(getPC());
+	printDebugStatus(getPC());
 	
 	//INSTRUCTIONS
 	if(operation == "ADC"){ //Add with Carry
@@ -717,9 +797,9 @@ void CPU::execute(string operation, string addressmode)
 		resultTest=getA()+operand+carry;
 		
 		if((getA() ^ resultTest) & (operand ^ s) & 0x80)
-			setP(OVERFLOW);
+			setP(AOVERFLOW);
 		else
-			clearP(OVERFLOW);
+			clearP(AOVERFLOW);
 		setA(getA()+operand+carry);
 		if(resultTest > 0xFF)
 			setP(CARRY);
@@ -750,15 +830,15 @@ void CPU::execute(string operation, string addressmode)
 			writeMem(opAddress, readMem(opAddress)<<1);
 			setFlags(readMem(opAddress));
 		}
-	} else if(operation == "BIT") { //Bit Test, set ZERO if none match. Then set OVERFLOW to memory bit 6 and NEGATIVE to memory bit 7
+	} else if(operation == "BIT") { //Bit Test, set ZERO if none match. Then set AOVERFLOW to memory bit 6 and NEGATIVE to memory bit 7
 		if((getA()&operand)==0)
 			setP(ZERO);
 		else
 			clearP(ZERO);
 		if((operand&BIT6)==BIT6) //if bit 6 set in operand
-			setP(OVERFLOW);
+			setP(AOVERFLOW);
 		else
-			clearP(OVERFLOW);
+			clearP(AOVERFLOW);
 		if((operand&BIT7)==BIT7) //if bit 7 set in operand
 			setP(NEGATIVE);
 		else
@@ -773,12 +853,12 @@ void CPU::execute(string operation, string addressmode)
 		if(checkP(NEGATIVE))
 			setPC(getPC()+toSInt(operand));
 			
-	} else if(operation == "BVC") { //Branch on Overflow Clear
-		if(!checkP(OVERFLOW))
+	} else if(operation == "BVC") { //Branch on AOVERFLOW Clear
+		if(!checkP(AOVERFLOW))
 			setPC(getPC()+toSInt(operand));
 			
-	} else if(operation == "BVS") { //Branch on Overflow Set
-		if(checkP(OVERFLOW))
+	} else if(operation == "BVS") { //Branch on AOVERFLOW Set
+		if(checkP(AOVERFLOW))
 			setPC(getPC()+toSInt(operand));
 			
 	} else if(operation == "BCC") { //Branch if Carry Clear
@@ -855,8 +935,8 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "SEI") { //Set Interrupt
 		setP(INTERRUPT);
 		
-	} else if(operation == "CLV") { //Clear Overflow
-		clearP(OVERFLOW);
+	} else if(operation == "CLV") { //Clear AOVERFLOW
+		clearP(AOVERFLOW);
 		
 	} else if(operation == "CLD") { //Clear Decimal
 		clearP(DECIMAL);
@@ -1070,9 +1150,9 @@ void CPU::execute(string operation, string addressmode)
 		resultTest=getA()-operand-(1-carry);
 		
 		if((getA() ^ resultTest) & (getA() ^ operand) & 0x80)
-			setP(OVERFLOW);
+			setP(AOVERFLOW);
 		else
-			clearP(OVERFLOW);
+			clearP(AOVERFLOW);
 		
 		setA(getA()-operand-(1-carry));
 		

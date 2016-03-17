@@ -26,6 +26,11 @@ System::System(){
 	if(init()){
 		run();
 	}
+	delete nesCPU;
+	delete nesPPU;
+	renderer->closeSDL();
+	delete renderer;
+	delete cart;
 }
 
 /*System::System(string customCart){
@@ -68,8 +73,10 @@ void System::loadConfig(){
 
 bool System::init(){
 	bool status = true;
-	nesCPU = new CPU();
 	nesPPU = new PPU();
+	nesCPU = new CPU(nesPPU);
+	
+	
 	renderer = new SDLrender(); //TODO destroy
 	renderer->initSDL();
 	

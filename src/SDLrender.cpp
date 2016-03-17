@@ -15,7 +15,7 @@ SDL_Window* window = NULL;
 SDL_Renderer* render = NULL;
 
 SDLrender::SDLrender(){
-	cout << "Renderer is now on." << endl;
+	cout << "SDL Renderer is spinning up." << endl;
 }
 
 bool SDLrender::initSDL(){

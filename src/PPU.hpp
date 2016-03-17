@@ -136,8 +136,8 @@ class PPU {
 	void start(SDLrender* r);
 	void stop();
 	void cycle();
-	void writeMem(int address, byte value);
-	byte readMem(int address);
+	void ppuWriteMem(int address, byte value);
+	byte ppuReadMem(int address);
 	byte readRegister(int accessReg, int readWrite);
 
 	int ppuR;

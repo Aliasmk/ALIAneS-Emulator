@@ -43,6 +43,7 @@ int Shell::runShell()
 			//Clears the memory used by the Emulator
 			delete nes;
 			nes = NULL;
+			
 		} 
 		/*else if (command == "load")
 		{
@@ -57,7 +58,7 @@ int Shell::runShell()
 		{
 			//Create the CPU Instance
 			cout << "Initializing CPU... ";
-			CPU* nesCPU = new CPU();
+			CPU* nesCPU = new CPU(NULL);
 			nesCPU->start();
 			cout << "Ready" << endl;
 			

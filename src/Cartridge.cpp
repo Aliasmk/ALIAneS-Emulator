@@ -26,6 +26,7 @@ struct Cartridge::flag7 {
 
 Cartridge::Cartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *nesPPU){
 	openCartridge(cartPath, nesCPU, nesPPU);
+	std::cout << "Cartridge is now loaded." << std::endl;
 }
 
 //Open the file stream, parse the header and based on that information, allocate CPU memory for program rom.
@@ -64,7 +65,7 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *
 			if(CHRsize8x == 0x01){
 				std::cout << "8K CHR memory loaded." << std::endl;
 				for(int offset = 0x0; offset<0x1FFF; offset++){
-					nesPPU->writeMem(0x0+offset,(byte)currentCart.get());
+					nesCPU->writeMem(0x0+offset,(byte)currentCart.get());
 				}
 			} else {
 				std::cout << "Error - CHR-ROM too large (>8k) or too small (<8k)." << std::endl;
