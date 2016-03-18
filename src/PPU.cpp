@@ -119,9 +119,9 @@ void PPU::cycle(){
 	ppuG = color;
 	ppuB = color;
 	
-	ppuR += frame%255;
-	ppuG += (scanLine%255);//+(frame%255)/5;
-	ppuB += (cycles%255) - (frame%255)*2;
+	//ppuR += frame%255;
+	//ppuG += (scanLine%255);//+(frame%255)/5;
+	//ppuB += (cycles%255) - (frame%255)*2;
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
