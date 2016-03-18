@@ -70,7 +70,8 @@ void CPU::start(){
 	}
 	cout << "Reset vector: " << setw(2)<<setfill('0') <<hex << (int)readMem(0xfffc) <<setw(2)<<setfill('0')<<hex<< (int)readMem(0xfffd)<<endl;	
 	cout << "Startup: Completed"<<endl;		
-	cout << setfill (' ') << "Address" <<setw(spacing)<<"OPCode" <<setw(spacing) << "AddressMode" << setw(spacing) << "OpAddr" << setw(spacing) << "Operand" << setw(spacing) << "NextByte" << setw(spacing) << "ByteAfter" << endl;
+	if(debugging)
+		cout << setfill (' ') << "Address" <<setw(spacing)<<"OPCode" <<setw(spacing) << "AddressMode" << setw(spacing) << "OpAddr" << setw(spacing) << "Operand" << setw(spacing) << "NextByte" << setw(spacing) << "ByteAfter" << endl;
 	
 	wake();
 }
@@ -128,14 +129,14 @@ byte CPU::readMem(int address){
 				cout << "2001 PPUMASK read ERROR! ";
 			break;
 			case 2:
-				cout << "2002 PPUSTATUS read " << endl;
+				//cout << "2002 PPUSTATUS read " << endl;
 				return ptr_nesPPU->readPPUSTATUS();
 			break;
 			case 3:
 				cout << "2003 OAMADDR read ERROR! ";
 			break;
 			case 4:
-				cout << "2004 OAMDATA read ";
+				//cout << "2004 OAMDATA read ";
 				return ptr_nesPPU->readOAMDATA();
 			break;
 			case 5:
@@ -145,7 +146,7 @@ byte CPU::readMem(int address){
 				cout << "2006 PPUADDR read ERROR! ";
 			break;
 			case 7:
-				cout << "2007 PPUDATA read ";
+				//cout << "2007 PPUDATA read ";
 				return ptr_nesPPU->readPPUDATA();
 			break;
 		}
@@ -189,34 +190,34 @@ void CPU::writeMem(int address, byte value){
 		switch(offset)
 		{
 			case 0:
-				cout << "2000 PPUCTRL write" << endl;
+				//cout << "2000 PPUCTRL write" << endl;
 				ptr_nesPPU->writePPUCTRL(value);
 			break;
 			case 1:
-				cout << "2001 PPUMASK write" << endl;
+				//cout << "2001 PPUMASK write" << endl;
 				ptr_nesPPU->writePPUMASK(value);
 			break;
 			case 2:
 				cout << "2002 PPUSTATUS write ERROR!" << endl;
 			break;
 			case 3:
-				cout << "2003 OAMADDR write" << endl;
+				//cout << "2003 OAMADDR write" << endl;
 				ptr_nesPPU->writeOAMADDR(value);
 			break;
 			case 4:
-				cout << "2004 OAMDATA write" << endl;
+				//cout << "2004 OAMDATA write" << endl;
 				ptr_nesPPU->writeOAMDATA(value);
 			break;
 			case 5:
-				cout << "2005 PPUSCROLL write" << endl;
+				//cout << "2005 PPUSCROLL write" << endl;
 				ptr_nesPPU->writePPUSCROLL(value);
 			break;
 			case 6:
-				cout << "2006 PPUADDR write" << endl;
+				//cout << "2006 PPUADDR write" << endl;
 				ptr_nesPPU->writePPUADDR(value);
 			break;
 			case 7:
-				cout << "2007 PPUDATA write" << endl;
+				//cout << "2007 PPUDATA write" << endl;
 				ptr_nesPPU->writePPUDATA(value);
 			break;
 		}
@@ -258,7 +259,7 @@ void CPU::evaluateInterrupt(int & interruptType){
 			setWaitCycles(7);
 			setPC(toAddress(readMem(0xFFFA),readMem(0xFFFB)));
 			setP(BRK);
-			cout << endl <<"NMI interrupt has been thrown" << endl;
+			//cout << endl <<"NMI interrupt has been thrown" << endl;
 		break;
 		case IRQ:
 			//Push pc and flags to stack, setpc to IRQ (reset) interrupt vector and set I. 7 cycles

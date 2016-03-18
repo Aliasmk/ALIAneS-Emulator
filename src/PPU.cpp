@@ -12,12 +12,17 @@ using namespace std;
 
 typedef uint8_t byte;
 
+bool nDebugging = false;
+
 SDLrender* SDLrenderer;
 //CPU* ptr_nesCPU;
 
 
 PPU::PPU(){
 	cout << "NES PPU is now on." <<endl;
+	for(int i = 0; i<0x3FFF; i++){
+		ppuWriteMem(i, 0);
+	}
 	//ptr_nesCPU = nCPU; //address of?
 }
 
@@ -26,9 +31,7 @@ void PPU::start(SDLrender* r){
 	startTime = time(0);
 	addrFirstWrite = true;
 	vblank = false;
-	for(int i = 0; i<0x3FFF; i++){
-		ppuWriteMem(i, 0);
-	}
+	
 	cout << "PPU Initialization: Complete" << endl;
 	
 }
@@ -64,7 +67,7 @@ void PPU::cycle(){
 		vblank = true;
 		vblankStatus = true;
 		//ptr_nesCPU->triggerInterrupt(1);
-		cout << endl<< "vBlank begins" <<endl;
+		//cout << endl<< "vBlank begins" <<endl;
 	}
 	if(scanLine == 261 && cycles==1){
 		vblank = false;
@@ -72,7 +75,7 @@ void PPU::cycle(){
 		vblankSeen = false;
 		sprite0hit = false;
 		spriteOverflow = false;
-		cout << endl<< "vBlank ends" <<endl;
+		//cout << endl<< "vBlank ends" <<endl;
 	}
 	
 	if(cycles < 340)
@@ -115,13 +118,15 @@ void PPU::cycle(){
 		if(color > 0xFF)
 			color = 0xFF;
 	//}
+	
+	//color += (cycles%255) - (frame%255)*2;
 	ppuR = color;
 	ppuG = color;
-	ppuB = color;
+	ppuB = color; 
 	
 	//ppuR += frame%255;
 	//ppuG += (scanLine%255);//+(frame%255)/5;
-	//ppuB += (cycles%255) - (frame%255)*2;
+	
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
@@ -135,7 +140,8 @@ void PPU::cycle(){
 //condition ? expression1 : expression2
 
 void PPU::writePPUCTRL(byte in){
-	cout << endl << "PPUCTRL Write: " << hex << (int)in << endl;
+	if(nDebugging)
+		cout << endl << "PPUCTRL Write: " << hex << (int)in << endl;
 	
 	
 	(in&0x80)==0x80 ? nmiEnable = true : nmiEnable = false;
@@ -145,7 +151,8 @@ void PPU::writePPUCTRL(byte in){
 	(in&0x8)==0x8 ? spritePatternTable = true : spritePatternTable = false;
 	(in&0x4)==0x4 ? vramIncrementMode = true : vramIncrementMode = false;
 
-	cout << "nmiEnable( " << nmiEnable << ") ppuMode(" <<ppuMode<< ") spriteHeight(" << spriteHeight << ") backgroundPatternTable (" << backgroundPatternTable << ") spritePatternTable (" << spritePatternTable << ") vramIncrementMode (" << vramIncrementMode << ")" << endl;
+	if(nDebugging)
+		cout << "nmiEnable( " << nmiEnable << ") ppuMode(" <<ppuMode<< ") spriteHeight(" << spriteHeight << ") backgroundPatternTable (" << backgroundPatternTable << ") spritePatternTable (" << spritePatternTable << ") vramIncrementMode (" << vramIncrementMode << ")" << endl;
 	
 	
 	/*nmiEnable = in&0x80; 				//0=false, 1=true
@@ -160,7 +167,8 @@ void PPU::writePPUCTRL(byte in){
 }
 
 void PPU::writePPUMASK(byte in){
-	cout << endl << "PPUMASK Write: " << hex << (int)in << endl;
+	if(nDebugging)
+		cout << endl << "PPUMASK Write: " << hex << (int)in << endl;
 	
 	(in&0x80)==0x80 ? emphasizeBlue = true : emphasizeBlue = false;
 	(in&0x40)==0x40 ? emphasizeGreen = true : emphasizeGreen = false;
@@ -203,7 +211,8 @@ byte PPU::readOAMDATA(){
 }
 
 void PPU::writePPUSCROLL(byte in){
-	cout << endl << "PPUSCROLL write: " << hex << (int)in << endl;
+	if(nDebugging)
+		cout << endl << "PPUSCROLL write: " << hex << (int)in << endl;
 	if(scrollFirstWrite)
 		ppuscroll_scrollPosX = in;
 	else
@@ -213,14 +222,18 @@ void PPU::writePPUSCROLL(byte in){
 }
 	
 void PPU::writePPUADDR(byte in){
-	cout << endl << "PPUADDR write: " << hex << (int)in << endl;
+	if(nDebugging)
+		cout << endl << "PPUADDR write: " << hex << (int)in << endl;
 	if(addrFirstWrite)
 		ppuaddr_upperByte = in;
 	else{
 		ppuaddr_lowerByte = in;
-		cout << "VRAM address changed from " << vramAddr;
-		vramAddr =  ppuaddr_lowerByte| (ppuaddr_upperByte << 8);	
-		cout << " to " << vramAddr <<endl;
+		if(nDebugging){
+			cout << "VRAM address changed from " << vramAddr;
+			vramAddr =  ppuaddr_lowerByte| (ppuaddr_upperByte << 8);	
+			cout << " to " << vramAddr <<endl;
+		} else
+			vramAddr =  ppuaddr_lowerByte| (ppuaddr_upperByte << 8);
 	}
 		
 	addrFirstWrite = !addrFirstWrite;
@@ -230,8 +243,9 @@ void PPU::writePPUADDR(byte in){
 
 void PPU::writePPUDATA(byte in){
 	//TODO PPUDATA WRITE
-	if((int)in != 24){
-	cout << endl << "PPUDATA WRITE: " <<  hex << (int)in << " to vram addr " << hex << vramAddr << endl;
+	if(nDebugging){
+	
+		cout << endl << "PPUDATA WRITE: " <<  hex << (int)in << " to vram addr " << hex << vramAddr << endl;
 	
 	}
 	
@@ -246,7 +260,8 @@ byte PPU::readPPUDATA(){
 	//TODO PPUDATA READ
 	
 	byte out = ppuReadMem(vramAddr);
-	cout << endl << "PPUDATA READ: " <<  hex << (int)out << " from vram addr " << hex << vramAddr << endl;
+	if(nDebugging)
+		cout << endl << "PPUDATA READ: " <<  hex << (int)out << " from vram addr " << hex << vramAddr << endl;
 	if(vramIncrementMode)
 		vramAddr+=32;
 	else
