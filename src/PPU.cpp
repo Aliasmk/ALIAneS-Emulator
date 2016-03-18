@@ -64,6 +64,7 @@ void PPU::cycle(){
 		vblank = true;
 		vblankStatus = true;
 		//ptr_nesCPU->triggerInterrupt(1);
+		cout << endl<< "vBlank begins" <<endl;
 	}
 	if(scanLine == 261 && cycles==1){
 		vblank = false;
@@ -71,6 +72,7 @@ void PPU::cycle(){
 		vblankSeen = false;
 		sprite0hit = false;
 		spriteOverflow = false;
+		cout << endl<< "vBlank ends" <<endl;
 	}
 	
 	if(cycles < 340)
@@ -109,7 +111,7 @@ void PPU::cycle(){
 	/*if(color == 0x24){
 		color = 0;
 	}else{*/
-		color *= 3;
+		color *= 1;
 		if(color > 0xFF)
 			color = 0xFF;
 	//}
@@ -117,9 +119,9 @@ void PPU::cycle(){
 	ppuG = color;
 	ppuB = color;
 	
-	//ppuR = frame%255;
-	//ppuG = (scanLine%255);//+(frame%255)/5;
-	//ppuB = (cycles%255) - (frame%255)*2;
+	ppuR += frame%255;
+	ppuG += (scanLine%255);//+(frame%255)/5;
+	ppuB += (cycles%255) - (frame%255)*2;
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
@@ -182,7 +184,9 @@ void PPU::writePPUMASK(byte in){
 
 byte PPU::readPPUSTATUS(){
 	vblankStatus = false;
-	return (int)vblank*0x80 + (int)sprite0hit*0x40 + (int)spriteOverflow*0x20;
+	byte result = (int)vblank*0x80 + (int)sprite0hit*0x40 + (int)spriteOverflow*0x20;
+	//cout << "PPUStatus Read: " << hex << (int)result;
+	return result;
 	
 }
 	

@@ -19,7 +19,7 @@ int spacing = 15;
 int startoverride=0; //set to 0 for auto
 int cyclesToExecute;
 bool logging = false;
-bool debugging = true;
+bool debugging = false;
 ofstream lout;
 
 //Constructor which not used yet
@@ -248,10 +248,11 @@ void CPU::evaluateInterrupt(int & interruptType){
 		case NMI:
 			//Push pc and flags to stack, setpc to NMI interrupt vector and set I. 7 cycles
 			//TODO implement stackPush16 method
-			firstPart = (getPC()&0xF0)>4;
-			secondPart = (getPC()&0xF);
-			stackPush(secondPart);
+			firstPart = (getPC()&0xFF00)>>8;
+			secondPart = (getPC()&0xFF);
+			
 			stackPush(firstPart);
+			stackPush(secondPart);
 		
 			stackPush(getP());
 			setWaitCycles(7);
@@ -261,10 +262,11 @@ void CPU::evaluateInterrupt(int & interruptType){
 		break;
 		case IRQ:
 			//Push pc and flags to stack, setpc to IRQ (reset) interrupt vector and set I. 7 cycles
-			firstPart = (getPC()&0xF0)>4;
-			secondPart = (getPC()&0xF);
-			stackPush(secondPart);
+			firstPart = (getPC()&0xFF00)>>8;
+			secondPart = (getPC()&0xFF);
 			stackPush(firstPart);
+			stackPush(secondPart);
+			
 		
 			stackPush(getP());
 			setWaitCycles(7);
