@@ -61,6 +61,7 @@ void SDLrender::drawPixel(int x, int y, int red, int green, int blue){
 
 
 void SDLrender::closeSDL(){
+  cout << "SDL Renderer is now off." <<endl;
   SDL_DestroyRenderer(render);
 
   SDL_DestroyWindow(window);

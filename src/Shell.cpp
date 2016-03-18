@@ -14,6 +14,8 @@ using namespace std;
 
 typedef uint8_t byte;
 
+System* nes;
+
 Shell::Shell(){
 	cout << "NES Shell has now started." << endl;
 }
@@ -27,7 +29,17 @@ int Shell::runShell()
 {
 	string command;
 	//Presents an interactive shell front end to read and write memory as well as execute opcodes in a sandbox.
-	cout << endl << "********* Welcome to ALIAneS Testing Shell **********" << endl<< endl;
+
+cout << endl << "***************** Welcome to ****************";	
+cout 
+<< endl << "     _    _     ___    _               ____   " 
+<< endl << "    / \\  | |   |_ _|  / \\   _ __   ___/ ___|  "
+<< endl << "   / _ \\ | |    | |  / _ \\ | '_ \\ / _ \\___ \\  "
+<< endl << "  / ___ \\| |___ | | / ___ \\| | | |  __/___) | "
+<< endl << " /_/   \\_\\_____|___/_/   \\_\\_| |_|\\___|____/  " << endl;
+  
+cout << endl << " NES Emulation Project by Michael Kafarowski" << endl;                                          
+cout << endl << "*********************************************" << endl;
 	
 	//Loop a prompt while the user does not want to exit
 	while(command != "quit")
@@ -39,7 +51,7 @@ int Shell::runShell()
 		{
 			//Create the Emulator Instance
 			
-			System* nes = new System();
+			nes = new System();
 			//Clears the memory used by the Emulator
 			delete nes;
 			nes = NULL;

@@ -6,7 +6,6 @@
  */
 
 #include "System.hpp"
-
 #include "Cartridge.hpp"
 
 
@@ -26,11 +25,18 @@ System::System(){
 	if(init()){
 		run();
 	}
+	
+	
 	delete nesCPU;
+	nesCPU = NULL;
+	nesPPU->stop();
 	delete nesPPU;
+	nesPPU = NULL;
 	renderer->closeSDL();
 	delete renderer;
+	renderer = NULL;
 	delete cart;
+	cart = NULL;
 }
 
 /*System::System(string customCart){
@@ -95,12 +101,9 @@ bool System::init(){
 	return status;
 }
 void System::run(){
-
 	while(nesCPU->running && getPowerState()){
 		tick();
 	}
-	nesPPU->stop();
-	renderer->closeSDL();
 }
 void System::tick(){
 	//Run CPU then run PPU 3 times.

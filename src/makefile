@@ -7,14 +7,14 @@ OBJ=Cartridge.o CPU.o PPU.o SDLrender.o Shell.o System.o
 all: 
 	
 	$(CC) -c $(CFILE) 
-	$(CC) -o ../bin/System $(OBJ) $(CFLAGS)
+	$(CC) -o ../bin/ALIAneS $(OBJ) $(CFLAGS)
 	rm *.o
 
 run:
-	../bin/System
+	../bin/ALIAneS
 
 debug:
-	gdb-apple ../bin/System
+	gdb-apple ../bin/ALIAneS
 
 test:
 	g++ ../res/testcases.cpp -o ../bin/Test
