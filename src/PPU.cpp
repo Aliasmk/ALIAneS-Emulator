@@ -106,13 +106,13 @@ void PPU::cycle(){
 	
 	int color;
 	color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
-	if(color == 0x24){
+	/*if(color == 0x24){
 		color = 0;
-	}else{
-		color *= 5;
+	}else{*/
+		color *= 3;
 		if(color > 0xFF)
 			color = 0xFF;
-	}
+	//}
 	ppuR = color;
 	ppuG = color;
 	ppuB = color;
@@ -243,10 +243,10 @@ byte PPU::readPPUDATA(){
 	
 	byte out = ppuReadMem(vramAddr);
 	cout << endl << "PPUDATA READ: " <<  hex << (int)out << " from vram addr " << hex << vramAddr << endl;
-	/*if(vramIncrementMode)
+	if(vramIncrementMode)
 		vramAddr+=32;
 	else
-		vramAddr+=1;*/
+		vramAddr+=1;
 	return out;
 }
 

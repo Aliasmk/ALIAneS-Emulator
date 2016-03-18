@@ -19,6 +19,7 @@ int spacing = 15;
 int startoverride=0; //set to 0 for auto
 int cyclesToExecute;
 bool logging = false;
+bool debugging = true;
 ofstream lout;
 
 //Constructor which not used yet
@@ -627,12 +628,16 @@ void CPU::decodeAt(int address){
 	
 	//DEBUG Output
 	
-	cout << dec <<cycleCount << " - " << hex << uppercase << setw(4)<<setfill('0') <<address << setfill(' ')<< ":"<< setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
+	if(debugging)
+		cout << dec <<cycleCount << " - " << hex << uppercase << setw(4)<<setfill('0') <<address << setfill(' ')<< ":"<< setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
+	
+	
 	if(logging)
 		lout << dec << cycleCount << " " << hex  << uppercase<< setw(4) << setfill('0') << address<< setfill(' ') << setw(spacing) << operation << " " << hex << (int)opcode << setw(spacing) << addressmode;
 	execute(operation, addressmode);
 	
-	cout << endl;
+	if(debugging)
+		cout << endl;
 	
 	if(logging)
 		lout << endl;
@@ -779,21 +784,25 @@ void CPU::execute(string operation, string addressmode)
 	
 	//TODO DETECT A PPU ADDRESS READ
 
-	operand = readMem(opAddress);
+	//operand = readMem(opAddress);
 	
 	//DEBUG
 	if(addressmode != "implied" && addressmode != "accumulator"){	
-		cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand; // << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
+		if(debugging)
+			cout << setw(spacing)<< hex << (int)opAddress << setw(spacing) << (int)operand; // << setw(spacing) <<(int)firstByte << setw(spacing) << hex << (int)secondByte;
 	}
 	else
 	{
-		cout << setw(spacing)<< hex << "-" << setw(spacing) << "-";
+		if(debugging)
+			cout << setw(spacing)<< hex << "-" << setw(spacing) << "-";
 	}
 	
-	printDebugStatus(getPC());
+	if(debugging)
+		printDebugStatus(getPC());
 	
 	//INSTRUCTIONS
 	if(operation == "ADC"){ //Add with Carry
+		operand = readMem(opAddress);
 		byte carry;
 		int resultTest;
 		
@@ -815,10 +824,12 @@ void CPU::execute(string operation, string addressmode)
 		setFlags(getA());
 	
 	} else if(operation == "AND") { //Perform an AND with the read byte on the Accumulator. Uses: Value
+		operand = readMem(opAddress);
 		setA(getA()&operand);
 		setFlags(getA());
 		
 	} else if(operation == "ASL") { //Perform a left shift on the accumulator or memory, store old bit 7 in the carry flag
+		operand = readMem(opAddress);
 		if(addressmode == "accumulator"){
 			//TODO chane to enumerated bits instead of 128
 			if((128&getA())==128)
@@ -838,6 +849,7 @@ void CPU::execute(string operation, string addressmode)
 			setFlags(readMem(opAddress));
 		}
 	} else if(operation == "BIT") { //Bit Test, set ZERO if none match. Then set AOVERFLOW to memory bit 6 and NEGATIVE to memory bit 7
+		operand = readMem(opAddress);
 		if((getA()&operand)==0)
 			setP(ZERO);
 		else
@@ -853,34 +865,42 @@ void CPU::execute(string operation, string addressmode)
 			
 	} else if(operation == "BPL") { //Branch if Positive BRANCH \/
 		//TODO add cycles if branch succeeeds.
+		operand = readMem(opAddress);
 		if(!checkP(NEGATIVE))
 			setPC(getPC()+toSInt(operand));
 			
 	} else if(operation == "BMI") { //Branch if Minus
+		operand = readMem(opAddress);
 		if(checkP(NEGATIVE))
 			setPC(getPC()+toSInt(operand));
 			
 	} else if(operation == "BVC") { //Branch on AOVERFLOW Clear
+		operand = readMem(opAddress);
 		if(!checkP(AOVERFLOW))
 			setPC(getPC()+toSInt(operand));
 			
 	} else if(operation == "BVS") { //Branch on AOVERFLOW Set
+		operand = readMem(opAddress);
 		if(checkP(AOVERFLOW))
 			setPC(getPC()+toSInt(operand));
 			
 	} else if(operation == "BCC") { //Branch if Carry Clear
+		operand = readMem(opAddress);
 		if(!checkP(CARRY))
 			setPC(getPC()+toSInt(operand));
 			
 	} else if(operation == "BCS") { //Branch if Carry Set
+		operand = readMem(opAddress);
 		if(checkP(CARRY))
 			setPC(getPC()+toSInt(operand));	
 			
 	} else if(operation == "BNE") { //Branch if Not Equal (Zero Clear)
+		operand = readMem(opAddress);
 		if(!checkP(ZERO))
 			setPC(getPC()+toSInt(operand));
 			
 	} else if(operation == "BEQ") { //Branch if Equal (Zero Set) BRANCH 
+		operand = readMem(opAddress);
 		if(checkP(ZERO))
 			setPC(getPC()+toSInt(operand));
 			
@@ -898,6 +918,7 @@ void CPU::execute(string operation, string addressmode)
 		setP(BRK);
 		
 	} else if(operation == "CMP") { //Compare (Accumulator)
+		operand = readMem(opAddress);
 		int temp = getA()-operand;
 		setFlags(temp);
 		if(temp >=0) 
@@ -906,6 +927,7 @@ void CPU::execute(string operation, string addressmode)
 			clearP(CARRY);
 		
 	} else if(operation == "CPX") { //Compare X
+		operand = readMem(opAddress);
 		int temp = getX()-operand;
 		setFlags(temp);
 		if(temp >=0) 
@@ -914,6 +936,7 @@ void CPU::execute(string operation, string addressmode)
 			clearP(CARRY);
 	
 	} else if(operation == "CPY") { //Compare Y
+		operand = readMem(opAddress);
 		int temp = getY()-operand;
 		setFlags(temp);
 		if(temp >=0) 
@@ -922,11 +945,13 @@ void CPU::execute(string operation, string addressmode)
 			clearP(CARRY);
 			
 	} else if(operation == "DEC") { //Decrement Memory
+		operand = readMem(opAddress);
 		int result = operand - 1;
 		writeMem(opAddress, result);
 		setFlags(result);
 		
 	} else if(operation == "EOR") { //Exclusive OR (XOR)
+		operand = readMem(opAddress);
 		setA(getA()^operand);
 		setFlags(getA());
 		
@@ -952,6 +977,7 @@ void CPU::execute(string operation, string addressmode)
 		setP(DECIMAL);
 		
 	} else if(operation == "INC") { //Increment Memory
+		operand = readMem(opAddress);
 		int result = operand + 1;
 		writeMem(opAddress, result);
 		setFlags(result);
@@ -973,18 +999,22 @@ void CPU::execute(string operation, string addressmode)
 		
 	} else if(operation == "LDA") { //Load A
 		//TODO when writing to registers, are flags always set if so combine them
+		operand = readMem(opAddress);
 		setA(operand);
 		setFlags(operand);
 		
 	} else if(operation == "LDX") { //Load X
+		operand = readMem(opAddress);
 		setX(operand);
 		setFlags(operand);
 		
 	} else if(operation == "LDY") { //Load Y
+		operand = readMem(opAddress);
 		setY(operand);
 		setFlags(operand);
 		
 	} else if(operation == "LSR") { //Logical Shift Right
+		operand = readMem(opAddress);
 		if(addressmode == "accumulator"){
 			if((1&getA())==1)
 				setP(CARRY);
@@ -1006,6 +1036,7 @@ void CPU::execute(string operation, string addressmode)
 	} else if(operation == "NOP") { //No Operation
 		//Does nothing
 	} else if(operation == "ORA") { //Inclusive OR  
+		operand = readMem(opAddress);
 		setA(getA()|operand);
 		setFlags(getA());
 		
@@ -1042,6 +1073,7 @@ void CPU::execute(string operation, string addressmode)
 		setFlags(getY());
 		
 	} else if(operation == "ROL") { //Rotate Left TODO Test
+		operand = readMem(opAddress);
 		bool oldcarry = checkP(CARRY);
 		bool newcarry;
 		if(addressmode == "accumulator"){
@@ -1084,6 +1116,7 @@ void CPU::execute(string operation, string addressmode)
 		}
 		
 	} else if(operation == "ROR") { //Rotate Right TODO Test
+		operand = readMem(opAddress);
 		bool oldcarry = checkP(CARRY);
 		bool newcarry;	
 		if(addressmode == "accumulator"){
@@ -1146,6 +1179,7 @@ void CPU::execute(string operation, string addressmode)
 		setPC(address);
 		
 	} else if(operation == "SBC") { //Subtract With Carry
+		operand = readMem(opAddress);
 		byte carry;
 		int resultTest;
 		
@@ -1385,6 +1419,15 @@ void CPU::memoryDump(){
 //TODO include all output in one function for finer and more organized debug
 void CPU::printDebugStatus(int address){
 	//cout << endl << address << ": " << hex << (int)readMem(address) << " " << hex << (int)readMem(address+1) << " " << hex << (int)readMem(address+2);
-	cout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS();
-	lout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS();
+	stringstream stack;
+	stack << " - stack: top ||<- ";
+
+	for(int i = getS(); i<s+8; i++){
+		stack << hex << (int)readMem(toAddress(i,0x01)) << ",";
+	}
+	
+	string stack2 = stack.str();
+	
+	cout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS() << stack2;
+	lout << setw(5) << "A:" << hex << (int)getA() << " X:" << hex << (int)getX() <<  " Y:" << hex << (int)getY() << " P:" << hex << (int)getP() << " SP:" << hex << (int)getS() << stack2;
 }
