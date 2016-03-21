@@ -108,15 +108,20 @@ void PPU::cycle(){
 	
 	
 	//cout << "PPU cycle " << cycles << " in scanline " << scanLine << " of frame " << frame << endl;
-	
+	//int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
 	int color;
-	color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
+	//color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
+	int tileID = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
+	color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
+	color = color*85;
+	
+	
 	/*if(color == 0x24){
 		color = 0;
 	}else{*/
-		color *= 1;
-		if(color > 0xFF)
-			color = 0xFF;
+		//color *= 1;
+		//if(color > 0xFF)
+		//	color = 0xFF;
 	//}
 	
 	//color += (cycles%255) - (frame%255)*2;
@@ -272,6 +277,23 @@ byte PPU::readPPUDATA(){
 void PPU::writeOAMDMA(){
 	//TODO OAM DATA WRITE
 	
+}
+
+//returns 0 for none, 1 for left, 2 for right, 3 for both.
+int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
+	int pixelValue = 0;
+	uint16_t ppuTileLineAddress;
+	for(int half = 0; half<=1; half++){
+	//Possibly spritePatternTable
+		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8) + (scanL%8);
+		
+		byte bitmask = 0x80>>(cyc%8);
+			
+		if((ppuReadMem(ppuTileLineAddress) & bitmask) != 0)
+			pixelValue += half+1;
+		
+	}
+	return pixelValue;
 }
 
 bool PPU::getNMI(){

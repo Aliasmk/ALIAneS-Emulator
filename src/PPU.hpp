@@ -162,5 +162,6 @@ class PPU {
 	byte readPPUDATA();
 	void writeOAMDMA();
 	bool getNMI();
+	int fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf);
 };
 #endif
