@@ -36,21 +36,6 @@ bool SDLrender::initSDL(){
     }
   }
   cout << "Completed" << endl;
-  
-  //Draw pixel test
-  /*for(int i = 0; i<200; i++){
-  for(int y = 0; y < SCREEN_HEIGHT; y++){
-  	for(int x = 0; x < SCREEN_WIDTH; x++){
-  		int r = rand()%254;
-  		int g = rand()%254;
-  		int b = rand()%254;
-  		
-  		drawPixel(x,y,r,g,b);
-  	}
-  }*/
-  
-  
-  
   return status;
 }
 
@@ -72,12 +57,28 @@ void SDLrender::closeSDL(){
 
 void SDLrender::renderPixelCallback(){
 	//TODO temporary - draws pixel to next avaliable location
-	drawPixel(gx, gy, r, g, b);
+	
+	if(gx < SCREEN_WIDTH && gy < SCREEN_HEIGHT){
+		
+			frameBuffer[gx][gy].red = r;
+			frameBuffer[gx][gy].green = g;
+			frameBuffer[gx][gy].blue = b;
+		
+	}
+	//drawPixel(gx, gy, r, g, b);
 	  
 }
 
 void SDLrender::onFrameEnd(){
+	for(int y = 0; y < SCREEN_HEIGHT; y++){
+  		for(int x = 0; x < SCREEN_WIDTH; x++){
+			
+  					drawPixel(x,y,frameBuffer[x][y].red,frameBuffer[x][y].green,frameBuffer[x][y].blue);
+
+		}
+	}
 	SDL_RenderPresent(render);
+	oddFrame = !oddFrame;
 }
 
 void SDLrender::setNextColor(int nxtr, int nxtg, int nxtb){
