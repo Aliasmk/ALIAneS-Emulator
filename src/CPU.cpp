@@ -127,7 +127,12 @@ byte CPU::readMem(int address){
 	if(address == 0x4016){
 		//cout << "Index: " << keyIndex << endl;
 		//write goes here
-		memory[0x4016] = keys[keyIndex];
+		
+		if(keyIndex < 8)
+			memory[0x4016] = keys[keyIndex];
+		else
+			memory[0x4016] = 1;
+		
 		//read goes here
 		//cout << "Reading from 0x4016: " << hex << (int)memory[address] << endl;
 		keyIndex++;
@@ -198,6 +203,7 @@ void CPU::writeMem(int address, byte value){
 	
 	if(address==0x4016){
 		//cout << "Writing value " << hex << (int)value << " to address " << hex << address << endl;
+		value = value&0x1;
 		if(value == 1){
 			//cout << "key index was " << keyIndex;
 			keyIndex = 0;
@@ -1355,6 +1361,7 @@ void CPU::setS(byte i){
 //Set and clear status flags 
 void CPU::setP(byte add){
 	p = p | add;
+	p = p | 0x20;
 }
 
 void CPU::clearP(byte sub){

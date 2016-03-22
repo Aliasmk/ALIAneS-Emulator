@@ -7,3 +7,4 @@ related_nosync/*
 res/logs/*
 bin/System
 res/logs/alianesLast.log
+res/roms/*

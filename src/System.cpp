@@ -97,7 +97,7 @@ bool System::init(){
 	nesCPU = new CPU(nesPPU);
 	
 	
-	renderer = new SDLrender(); //TODO destroy
+	renderer = new SDLrender();
 	renderer->initSDL();
 	
 	loadConfig();

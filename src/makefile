@@ -6,7 +6,7 @@ OBJ=Cartridge.o CPU.o PPU.o SDLrender.o Shell.o System.o
 
 all: 
 	
-	$(CC) -c $(CFILE) 
+	$(CC) -c $(CFILE)
 	$(CC) -o ../bin/ALIAneS $(OBJ) $(CFLAGS)
 	rm *.o
 
