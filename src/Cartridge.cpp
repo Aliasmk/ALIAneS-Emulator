@@ -6,7 +6,8 @@
  */
 
 #include "Cartridge.hpp"
-#include "CPU.hpp"
+
+
 
 //Bitsets for flags 6 and 7 of the header line
 struct Cartridge::flag6 {
@@ -23,12 +24,13 @@ struct Cartridge::flag7 {
 	bool VS: 1;					//VS
 };
 
-Cartridge::Cartridge(std::string cartPath, CPU::CPU& nesCPU){
-	openCartridge(cartPath, nesCPU);
+Cartridge::Cartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *nesPPU){
+	openCartridge(cartPath, nesCPU, nesPPU);
+	std::cout << "Cartridge is now loaded." << std::endl;
 }
 
 //Open the file stream, parse the header and based on that information, allocate CPU memory for program rom.
-void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU){
+void Cartridge::openCartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *nesPPU){
 	validCart = false;
 	//Open file as binary and check that it opened
 	currentCart.open(cartPath, std::ios::binary);
@@ -38,27 +40,37 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU& nesCPU){
 			std::cout << "ROM Import: ";
 			//This branch determines the size of the rom PRG based on the header info
 			if(PRGsize16x == 0x02){
-				std::cout << "32K rom loaded." << std::endl;
+				std::cout << "32K PRG loaded." << std::endl;
 				for(int offset = 0x0; offset<0x8000; offset++){
-					nesCPU.writeMem(0x8000+offset,(byte)currentCart.get());
+					nesCPU->writeMem(0x8000+offset,(byte)currentCart.get());
 				}
 				validCart = true;
 			} else if(PRGsize16x == 0x01) {
-				std::cout << "16K rom loaded. Mirroring" << std::endl;
+				std::cout << "16K PRG loaded. Mirroring" << std::endl;
 				//Memory is written to both banks. TODO: Add an implicit function in the 
 				//write mem function to mirror data automatically based on conditions,
 				//such as writing to ram (4 times mirrored) or PRG with a 16k rom.
 				for(int offset = 0x0; offset<0x4000; offset++){
-					nesCPU.writeMem(0x8000+offset,(byte)currentCart.get());
+					nesCPU->writeMem(0x8000+offset,(byte)currentCart.get());
 				}
 				for(int offset = 0x0; offset<0x4000; offset++){
-					nesCPU.writeMem(0xc000+offset,nesCPU.readMem(0x8000+offset));
+					nesCPU->writeMem(0xc000+offset,nesCPU->readMem(0x8000+offset));
 				}
 				validCart = true;
 			}
 			else {
-				std::cout << "Error - ROM too large (>32k) or too small (8k)." << std::endl;
+				std::cout << "Error - PRG-ROM too large (>32k) or too small (<16k)." << std::endl;
 			}
+			
+			if(CHRsize8x == 0x01){
+				std::cout << "8K CHR memory loaded." << std::endl;
+				for(int offset = 0x0; offset<0x1FFF; offset++){
+					nesPPU->ppuWriteMem(0x0+offset,(byte)currentCart.get());
+				}
+			} else {
+				std::cout << "Error - CHR-ROM too large (>8k) or too small (<8k)." << std::endl;
+			}
+			
 			std::cout << "ROM Import: Complete ("<< cartPath <<")"<<std::endl;
 	}
 	else{

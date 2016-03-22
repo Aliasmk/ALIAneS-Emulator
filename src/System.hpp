@@ -12,6 +12,8 @@
 #include <iostream>
 #include <cstdlib>
 #include "CPU.hpp"
+#include "PPU.hpp"
+#include "SDLrender.hpp"
 
 
 
@@ -19,9 +21,15 @@ class System {
 	private:
 		bool powerState;
 			
-		void tick();	
+		void tick();
+		void getInput();	
 		int tickCount;
 	public: 
+		
+		
+		int keysPressed[8];
+		
+		
 		System();
 		System(std::string cart);
 
@@ -30,7 +38,9 @@ class System {
 		void loadConfig();
 		bool init();
 		void run();
-		CPU getCPU();
+		CPU* getCPU();
+		PPU* getPPU();
+		SDLrender* getRenderer();
 		
 		void setPowerState(bool state);
 		bool getPowerState();

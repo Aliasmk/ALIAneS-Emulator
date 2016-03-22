@@ -9,11 +9,12 @@
 #define	NESCPU
 
 #include <string>
+#include <sstream>
 #include <stdint.h>
 #include <iostream>
 #include <fstream>
 #include <iomanip>
-
+#include "PPU.hpp"
 
 class CPU {
 	private:
@@ -32,7 +33,7 @@ class CPU {
 			DECIMAL = 8,	//
 			BRK = 16,	//This is set when a software interrupt (BRK instruction) is executed.
 			UNUSED = 32,	//Not used. Supposed to be logical 1 at all times.
-			OVERFLOW = 64,//Set when an arithmetic operation produces a result too large to be represented in a byte
+			AOVERFLOW = 64,//Set when an arithmetic operation produces a result too large to be represented in a byte
 			NEGATIVE = 128	//this is set if the result of an operation is negative, cleared if positive.
 		};
 		
@@ -57,11 +58,16 @@ class CPU {
 		byte p; //Processor Flags
 		byte memory[0xFFFF]; //Memory
 		short cycleWait;
-		int cycleCount;
+		
 		byte resetVector; //Memory location to begin execution from
 	public:
-		CPU();
+		int keyIndex;
+		int keys[8];
+		void setKeys(int* keysToSet);
 		
+		
+		CPU(PPU* NESppu);
+		int cycleCount;
 		//Normal functions
 		void setConfig(int startAddress, int cycles);
 		void start(); //Begin the CPU startup sequence

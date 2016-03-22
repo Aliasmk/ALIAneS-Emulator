@@ -5,13 +5,11 @@
 #include <cstdint>
 #include <iostream>
 
-class Shell{
-	public:
-	int main();
-	
-	private:
-		std::string getCommand();
 
+class Shell{
+	public:	
+		Shell();
+		int runShell();
 };
 
 #endif
