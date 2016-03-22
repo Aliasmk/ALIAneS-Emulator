@@ -99,6 +99,7 @@ void PPU::cycle(){
 			
 			
 			cout << endl << endl;*/
+			frameEnd = true;
 			SDLrenderer->onFrameEnd();
 			//cout << "PPU render: " << frame << endl;
 		}

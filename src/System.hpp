@@ -21,9 +21,15 @@ class System {
 	private:
 		bool powerState;
 			
-		void tick();	
+		void tick();
+		void getInput();	
 		int tickCount;
 	public: 
+		
+		
+		int keysPressed[8];
+		
+		
 		System();
 		System(std::string cart);
 

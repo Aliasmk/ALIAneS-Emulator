@@ -148,6 +148,8 @@ class PPU {
 	bool vblank;
 	bool vblankSeen;
 	
+	bool frameEnd;
+	
 	//Internal interface functions 
 	//TODO write these into code
 	void writePPUCTRL(byte in);

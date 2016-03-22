@@ -61,6 +61,11 @@ class CPU {
 		
 		byte resetVector; //Memory location to begin execution from
 	public:
+		int keyIndex;
+		int keys[8];
+		void setKeys(int* keysToSet);
+		
+		
 		CPU(PPU* NESppu);
 		int cycleCount;
 		//Normal functions

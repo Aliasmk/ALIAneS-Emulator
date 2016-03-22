@@ -110,8 +110,28 @@ void CPU::cycle(){
 
 //---MEMORY ACCESS---//
 
+
+void CPU::setKeys(int* keysToSet){
+	//cout << "set keys: ";
+	for(int k = 0; k<8; k++){
+		keys[k]=keysToSet[k];
+		//cout << keys[k];
+	}
+	//cout << endl;
+}
+
 //Returns a memory value from selected address
 byte CPU::readMem(int address){
+	
+	
+	if(address == 0x4016){
+		//cout << "Index: " << keyIndex << endl;
+		//write goes here
+		memory[0x4016] = keys[keyIndex];
+		//read goes here
+		//cout << "Reading from 0x4016: " << hex << (int)memory[address] << endl;
+		keyIndex++;
+	}
 	
 	//cout << "reading memory - ";
 	if(address >= 0x2000 && address <=0x3FFF)
@@ -172,6 +192,20 @@ byte CPU::readNext(){
 void CPU::writeMem(int address, byte value){	
 	//Memory Mirroring
 	//Not sure what this section in memory is for
+	
+	
+	
+	
+	if(address==0x4016){
+		//cout << "Writing value " << hex << (int)value << " to address " << hex << address << endl;
+		if(value == 1){
+			//cout << "key index was " << keyIndex;
+			keyIndex = 0;
+			//cout << " now " << keyIndex << endl;
+		}
+	}
+	
+	
 	if(address >= 0x0800 && address <= 0x1FFF){
 		//Mirror every 0x0800 bytes
 		int offset = address%0x0800;	
