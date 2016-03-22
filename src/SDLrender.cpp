@@ -24,7 +24,7 @@ bool SDLrender::initSDL(){
   cout << "Renderer Initialization: ";
   if(SDL_Init(SDL_INIT_VIDEO)<0){
     status = false;
-    cout << "Failed: Could not initialize SDL!" << endl;
+   cout << "Failed: Could not initialize SDL!" << endl;
   } else {
     window = SDL_CreateWindow("ALIAneS Emulation Project",SDL_WINDOWPOS_UNDEFINED,SDL_WINDOWPOS_UNDEFINED,SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
     if(window == NULL){
@@ -34,7 +34,7 @@ bool SDLrender::initSDL(){
       //surface = SDL_GetWindowSurface(window);
       render = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     }
-  }
+ }
   cout << "Completed" << endl;
   return status;
 }
@@ -47,11 +47,15 @@ void SDLrender::drawPixel(int x, int y, int red, int green, int blue){
 
 void SDLrender::closeSDL(){
   cout << "SDL Renderer is now off." <<endl;
+  
+  
+  
   SDL_DestroyRenderer(render);
+ // render = NULL;
 
   SDL_DestroyWindow(window);
-  window = NULL;
-
+  //window = NULL;
+SDL_VideoQuit();
   SDL_Quit();
 }
 

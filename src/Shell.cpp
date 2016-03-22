@@ -15,6 +15,7 @@ using namespace std;
 typedef uint8_t byte;
 
 System* nes;
+string version = "0.3.0";
 
 Shell::Shell(){
 	cout << "NES Shell has now started." << endl;
@@ -30,14 +31,14 @@ int Shell::runShell()
 	string command;
 	//Presents an interactive shell front end to read and write memory as well as execute opcodes in a sandbox.
 
-cout << endl << "***************** Welcome to ****************";	
+cout << endl << "*********************************************";	
 cout 
-<< endl << "     _    _     ___    _               ____   " 
-<< endl << "    / \\  | |   |_ _|  / \\   _ __   ___/ ___|  "
-<< endl << "   / _ \\ | |    | |  / _ \\ | '_ \\ / _ \\___ \\  "
-<< endl << "  / ___ \\| |___ | | / ___ \\| | | |  __/___) | "
-<< endl << " /_/   \\_\\_____|___/_/   \\_\\_| |_|\\___|____/  " << endl;
-  
+<< endl << "    _    _     ___    _               ____   " 
+<< endl << "   / \\  | |   |_ _|  / \\   _ __   ___/ ___|  "
+<< endl << "  / _ \\ | |    | |  / _ \\ | '_ \\ / _ \\___ \\  "
+<< endl << " / ___ \\| |___ | | / ___ \\| | | |  __/___) | "
+<< endl << "/_/   \\_\\_____|___/_/   \\_\\_| |_|\\___|____/  " << endl;
+cout << endl << "               Version "<<version<<"                " << endl;            
 cout << endl << " NES Emulation Project by Michael Kafarowski" << endl;                                          
 cout << endl << "*********************************************" << endl;
 	
