@@ -32,6 +32,8 @@ class PPU {
 	byte ppuMemory[0x3FFF];
 	//OAM memory contains information about how sprites are rendered.
 	byte oamMemory[0xFF];
+	byte oamMemorySec[0x20];
+	int spriteIndex;
 	
 	
 	//STATE TRACKING//
@@ -138,7 +140,11 @@ class PPU {
 	void stop();
 	void cycle();
 	void ppuWriteMem(int address, byte value);
+	void ppuWriteOAM(int address, byte value);
+	void ppuWriteSecOAM(int address, byte value);
 	byte ppuReadMem(int address);
+	byte ppuReadOAM(int address);
+	byte ppuReadSecOAM(int address);
 	byte readRegister(int accessReg, int readWrite);
 
 	int ppuR;
@@ -158,6 +164,7 @@ class PPU {
 	void writeOAMADDR(byte in);
 	void writeOAMDATA(byte in);
 	byte readOAMDATA();
+	void clearSecOAM();
 	void writePPUSCROLL(byte in);
 	void writePPUADDR(byte in);
 	void writePPUDATA(byte in);
@@ -165,5 +172,6 @@ class PPU {
 	void writeOAMDMA();
 	bool getNMI();
 	int fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf);
+	int fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf);
 };
 #endif

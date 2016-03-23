@@ -72,7 +72,7 @@ void CPU::start(){
 	cout << "Startup: Completed"<<endl;		
 	if(debugging)
 		cout << setfill (' ') << "Address" <<setw(spacing)<<"OPCode" <<setw(spacing) << "AddressMode" << setw(spacing) << "OpAddr" << setw(spacing) << "Operand" << setw(spacing) << "NextByte" << setw(spacing) << "ByteAfter" << endl;
-	
+	oddCycle=false;
 	wake();
 }
 
@@ -105,6 +105,7 @@ void CPU::cycle(){
 			lout.close();	
 		//memoryDump();
 	}
+	oddCycle = !oddCycle;
 	cycleCount++;
 }
 
@@ -198,7 +199,25 @@ void CPU::writeMem(int address, byte value){
 	//Memory Mirroring
 	//Not sure what this section in memory is for
 	
+	//DEBUG
+	/*if(address >= 0x200 && address <0x300){
+		cout << "data (" << hex << (int)value << ") written to " << hex<< address << endl;
+	}*/
 	
+	//If writing to OAM DMA
+	if(address==0x4014){
+		int readAddress = (value<<8);
+		//cout << "OAM DMA has been written to. Copying " << hex << readAddress << " to " << hex <<readAddress+0xFF << " into OAM memory" << endl;
+		for(int i = 0; i<256; i++){
+			
+			ptr_nesPPU->ppuWriteOAM(i, readMem(readAddress+i));
+			//cout << "writing " << hex << (int)readMem(readAddress+i) << " from CPU " << readAddress+i << " to OAM " << i << endl; 
+			//TODO what if there OAM ADDR is not 0? out of bounds of array!quit
+		}
+		
+		setWaitCycles(513+oddCycle);
+		
+	}
 	
 	
 	if(address==0x4016){
@@ -241,11 +260,11 @@ void CPU::writeMem(int address, byte value){
 				cout << "2002 PPUSTATUS write ERROR!" << endl;
 			break;
 			case 3:
-				//cout << "2003 OAMADDR write" << endl;
+			//	cout << "2003 OAMADDR write" << endl;
 				ptr_nesPPU->writeOAMADDR(value);
 			break;
 			case 4:
-				//cout << "2004 OAMDATA write" << endl;
+			//	cout << "2004 OAMDATA write" << endl;
 				ptr_nesPPU->writeOAMDATA(value);
 			break;
 			case 5:

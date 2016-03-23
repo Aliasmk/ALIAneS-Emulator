@@ -47,7 +47,8 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *
 				validCart = true;
 			} else if(PRGsize16x == 0x01) {
 				std::cout << "16K PRG loaded. Mirroring" << std::endl;
-				//Memory is written to both banks. TODO: Add an implicit function in the 
+				//Memory is written to both banks. 
+				//TODO: Add an implicit function in the 
 				//write mem function to mirror data automatically based on conditions,
 				//such as writing to ram (4 times mirrored) or PRG with a 16k rom.
 				for(int offset = 0x0; offset<0x4000; offset++){

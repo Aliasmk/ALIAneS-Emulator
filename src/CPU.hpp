@@ -57,9 +57,11 @@ class CPU {
 		byte s; //Stack Counter
 		byte p; //Processor Flags
 		byte memory[0xFFFF]; //Memory
+		
 		short cycleWait;
 		
 		byte resetVector; //Memory location to begin execution from
+		bool oddCycle;
 	public:
 		int keyIndex;
 		int keys[8];

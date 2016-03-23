@@ -31,7 +31,7 @@ void PPU::start(SDLrender* r){
 	startTime = time(0);
 	addrFirstWrite = true;
 	vblank = false;
-	
+	spriteIndex=0;
 	cout << "PPU Initialization: Complete" << endl;
 	
 }
@@ -54,9 +54,28 @@ void PPU::ppuWriteMem(int address, byte value){
 	//cout << "writing value " << hex << (int)value << " to PPU address " << (int)address << endl;
 }
 
+void PPU::ppuWriteOAM(int address, byte value){
+	oamMemory[address] = value;
+	//cout << "writing value " << hex << (int)value << " to PPU OAM address " << (int)address << endl;
+}
+
+void PPU::ppuWriteSecOAM(int address, byte value){
+	oamMemorySec[address] = value;
+	//cout << "writing value " << hex << (int)value << " to PPU Sec OAM address " << (int)address << endl;
+}
+
 byte PPU::ppuReadMem(int address){
 	return ppuMemory[address];
 }
+
+byte PPU::ppuReadOAM(int address){
+	return oamMemory[address];
+}
+
+byte PPU::ppuReadSecOAM(int address){
+	return oamMemorySec[address];
+}
+
 
 void PPU::cycle(){
 	//cout << "PPU" << endl;
@@ -82,9 +101,27 @@ void PPU::cycle(){
 		cycles++;
 	else {
 		cycles = 0;
-		if(scanLine < 261)
+		if(scanLine < 261){
+			
+			clearSecOAM();
+			
+			for(int i = 0; i<64;i++){
+				if(spriteIndex > 7) break;
+				
+				if((ppuReadOAM(i*4)-scanLine)<8 && (ppuReadOAM(i*4)-scanLine)>0 && scanLine < 240){
+					//cout << dec << (int)ppuReadOAM(i*4) << " - " << scanLine << " = " << ppuReadOAM(i*4)-scanLine << endl;
+					//cout << "Sprite " << spriteIndex << " data: ";
+					for(int n = 0; n<4; n++){
+						ppuWriteSecOAM((spriteIndex*4)+n, ppuReadOAM((i*4)+n));
+						//cout << hex << (int)ppuReadSecOAM(spriteIndex*4+n) << " ";
+					}
+					//cout << endl;
+					
+					spriteIndex++;
+				}
+			}
 			scanLine++;
-		else{
+		}else{
 			scanLine = 0;
 			frame++;
 			/*cout << endl << endl;
@@ -99,8 +136,23 @@ void PPU::cycle(){
 			
 			
 			cout << endl << endl;*/
+			
+			
+			
+			
+			//cout << "Sprites on screen: " << endl;
+			/*for(int i = 0; i<256; i+=4){
+				if(oamMemory[i] != 0xf0 && oamMemory[i+1] != 0xf0 && oamMemory[i+2] != 0xf0 && oamMemory[i+3] != 0xf0)
+					cout << "(" << floor(i/4) << ") tile " << hex << (int)oamMemory[i+1] << " at SL/C " << hex << (int)oamMemory[i] << "/" << (int)oamMemory[i+3] << " w attribute value " <<  (int)oamMemory[i+2] << endl;
+			}*/
+			
+			
 			frameEnd = true;
 			SDLrenderer->onFrameEnd();
+			
+			
+		
+			
 			//cout << "PPU render: " << frame << endl;
 		}
 	}
@@ -114,8 +166,26 @@ void PPU::cycle(){
 	//color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
 	int tileID = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
 	color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
-	color = color*85;
+	int tempcolor;
+	for(int i = 0; i<= spriteIndex; i++){
+		if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>0){
+			tempcolor = fetchSpritePixel(ppuReadSecOAM(i*4+1),ppuReadSecOAM(i*4)-scanLine, cycles-ppuReadSecOAM(i*4+3), spritePatternTable);
+			if(tempcolor != 0) 
+				color = tempcolor;
+		}	
+	}
 	
+	/*int tempColor = 0;
+	for(int i = 0; i<64;i++){
+		if(ppuReadOAM(i*4) < 0xF0 || (scanLine-ppuReadOAM(i*4)<8 && cycles-ppuReadOAM((i*4)+3)<8)){
+			tempColor = fetchTilePixel(ppuReadOAM((i*4)+1), scanLine-ppuReadOAM((i*4))-1, cycles-ppuReadOAM((i*4)+3), spritePatternTable);		
+			if(tempColor != 0){
+				color = tempColor;
+			}	
+		}
+	}*/
+	
+	color = color*85;
 	
 	/*if(color == 0x24){
 		color = 0;
@@ -132,6 +202,7 @@ void PPU::cycle(){
 	
 	//ppuR += frame%255;
 	//ppuG += (scanLine%255);//+(frame%255)/5;
+	
 	
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
@@ -203,17 +274,23 @@ byte PPU::readPPUSTATUS(){
 	return result;
 	
 }
-	
+
 void PPU::writeOAMADDR(byte in){
+	//cout << "OAM address written. was " << hex << (int)oamAddress;
 	oamAddress = in;
+	//cout << ", now " << hex << (int)oamAddress << endl;
+	
 }
 
 void PPU::writeOAMDATA(byte in){
 	oamValue = in;
+	oamMemory[oamAddress] = oamValue;
+	//cout << "Writing " << hex << (int)in << " to OAM address " << hex << oamAddress << endl;
 }
 	
 byte PPU::readOAMDATA(){
-	return oamValue;
+	cout << "Reading out value " << hex << (int)oamMemory[oamAddress] << " from oam:" << oamAddress;
+	return oamMemory[oamAddress];
 }
 
 void PPU::writePPUSCROLL(byte in){
@@ -277,11 +354,35 @@ byte PPU::readPPUDATA(){
 
 void PPU::writeOAMDMA(){
 	//TODO OAM DATA WRITE
-	
+	//cout << "Write OAMDMA has been called" << endl;
+}
+
+void PPU::clearSecOAM(){
+	for(int i = 0; i<0x20; i++){
+		//cout << "Clearing "
+		oamMemorySec[i] = 0;
+	}
+	spriteIndex=0;
 }
 
 //returns 0 for none, 1 for left, 2 for right, 3 for both.
 int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
+	int pixelValue = 0;
+	uint16_t ppuTileLineAddress;
+	for(int half = 0; half<=1; half++){
+	//Possibly spritePatternTable
+		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8) + (scanL%8);
+		
+		byte bitmask = 0x80>>(cyc%8);
+			
+		if((ppuReadMem(ppuTileLineAddress) & bitmask) != 0)
+			pixelValue += half+1;
+		
+	}
+	return pixelValue;
+}
+
+int PPU::fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf){
 	int pixelValue = 0;
 	uint16_t ppuTileLineAddress;
 	for(int half = 0; half<=1; half++){
