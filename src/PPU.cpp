@@ -397,7 +397,13 @@ int PPU::fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attr
 	uint16_t ppuTileLineAddress;
 	for(int half = 0; half<=1; half++){
 	//Possibly spritePatternTable
-		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8) + (scanL%8);
+		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8);
+		
+		if((attributes&0x80)>0)
+		 	ppuTileLineAddress += 7-(scanL%8);
+		else
+			ppuTileLineAddress += (scanL%8);
+		
 		byte bitmask;
 		if((attributes&0x40) > 0)
 			bitmask = 0x80>>(7-cyc%8);
