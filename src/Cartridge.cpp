@@ -63,6 +63,7 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *
 				std::cout << "Error - PRG-ROM too large (>32k) or too small (<16k)." << std::endl;
 			}
 			
+			//Determines the size of the character memory 
 			if(CHRsize8x == 0x01){
 				std::cout << "8K CHR memory loaded." << std::endl;
 				for(int offset = 0x0; offset<0x1FFF; offset++){
