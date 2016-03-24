@@ -108,7 +108,7 @@ void PPU::cycle(){
 			for(int i = 0; i<64;i++){
 				if(spriteIndex > 7) break;
 				
-				if((ppuReadOAM(i*4)-scanLine)<8 && (ppuReadOAM(i*4)-scanLine)>0 && scanLine < 240){
+				if(scanLine+1-(ppuReadOAM(i*4))<8 && scanLine+1-(ppuReadOAM(i*4))>=0 && scanLine < 240){
 					//cout << dec << (int)ppuReadOAM(i*4) << " - " << scanLine << " = " << ppuReadOAM(i*4)-scanLine << endl;
 					//cout << "Sprite " << spriteIndex << " data: ";
 					for(int n = 0; n<4; n++){
@@ -120,7 +120,10 @@ void PPU::cycle(){
 					spriteIndex++;
 				}
 			}
+			
+			
 			scanLine++;
+			
 		}else{
 			scanLine = 0;
 			frame++;
@@ -168,10 +171,17 @@ void PPU::cycle(){
 	color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
 	int tempcolor;
 	for(int i = 0; i<= spriteIndex; i++){
-		if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>0){
-			tempcolor = fetchSpritePixel(ppuReadSecOAM(i*4+1),ppuReadSecOAM(i*4)-scanLine, cycles-ppuReadSecOAM(i*4+3), spritePatternTable);
-			if(tempcolor != 0) 
+		if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>=0){
+			tempcolor = fetchSpritePixel(ppuReadSecOAM(i*4+1),scanLine-ppuReadSecOAM(i*4), cycles-ppuReadSecOAM(i*4+3), spritePatternTable, ppuReadSecOAM(i*4+2));
+			
+			if(tempcolor != 0){
 				color = tempcolor;
+			}
+			
+			//if(tempcolor != 0) 
+			//	color = tempcolor;	
+			
+			
 		}	
 	}
 	
@@ -382,14 +392,17 @@ int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
 	return pixelValue;
 }
 
-int PPU::fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf){
+int PPU::fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attributes){
 	int pixelValue = 0;
 	uint16_t ppuTileLineAddress;
 	for(int half = 0; half<=1; half++){
 	//Possibly spritePatternTable
 		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8) + (scanL%8);
-		
-		byte bitmask = 0x80>>(cyc%8);
+		byte bitmask;
+		if((attributes&0x40) > 0)
+			bitmask = 0x80>>(7-cyc%8);
+		else
+			bitmask = 0x80>>(cyc%8);
 			
 		if((ppuReadMem(ppuTileLineAddress) & bitmask) != 0)
 			pixelValue += half+1;

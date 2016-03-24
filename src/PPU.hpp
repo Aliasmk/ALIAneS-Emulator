@@ -172,6 +172,6 @@ class PPU {
 	void writeOAMDMA();
 	bool getNMI();
 	int fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf);
-	int fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf);
+	int fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attributes);
 };
 #endif
