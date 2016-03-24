@@ -29,9 +29,17 @@ PPU::PPU(){
 void PPU::start(SDLrender* r){
 	SDLrenderer = r;
 	startTime = time(0);
+	spriteIndex=0;
+	
+	
 	addrFirstWrite = true;
 	vblank = false;
-	spriteIndex=0;
+	sprite0hit=false;
+	showSprites=true;
+	showBackground=true;
+	showLeftSprites=true;
+	showLeftBackground=true;
+	
 	cout << "PPU Initialization: Complete" << endl;
 	
 }
@@ -168,22 +176,51 @@ void PPU::cycle(){
 	int color;
 	//color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
 	int tileID = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
-	color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
-	int tempcolor;
-	for(int i = 0; i<= spriteIndex; i++){
-		if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>=0){
-			tempcolor = fetchSpritePixel(ppuReadSecOAM(i*4+1),scanLine-ppuReadSecOAM(i*4), cycles-ppuReadSecOAM(i*4+3), spritePatternTable, ppuReadSecOAM(i*4+2));
+	
+	if(showBackground){
+		color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
+	} else {
+		color = 0;
+	}
+	
+	/*if(!showBackground || (cycles<8 && showLeftBackground)){
+		color = 0;
+	} else {
+		color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
+	}*/
+	
+	if(!showSprites || (cycles<8 && showLeftSprites)){
+		; //do not draw sprites
+	} else {
+		
+		
+		int spriteColor;
+		for(int i = 0; i<= spriteIndex; i++){
+	
+			if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>=0){
+				spriteColor = fetchSpritePixel(ppuReadSecOAM(i*4+1),scanLine-ppuReadSecOAM(i*4), cycles-ppuReadSecOAM(i*4+3), spritePatternTable, ppuReadSecOAM(i*4+2));
 			
-			if(tempcolor != 0){
-				color = tempcolor;
-			}
+				//Sprite zero hit detection: uses the background color value just assigned to 
+				//check if the sprite has drawn an opaque pixel over a opaque background pixel
+				if(i==0 && color!=0 && spriteColor!=0){
+					//Sprite 0 hit detected
+					//cout << "Sprite 0 hit" << endl;
+					sprite0hit=true;
+				}
 			
+				if(spriteColor != 0){
+					color = spriteColor;
+				}
+				
 			//if(tempcolor != 0) 
 			//	color = tempcolor;	
 			
 			
-		}	
-	}
+			}	
+		
+		
+		}
+	} 
 	
 	/*int tempColor = 0;
 	for(int i = 0; i<64;i++){
@@ -278,8 +315,9 @@ void PPU::writePPUMASK(byte in){
 }
 
 byte PPU::readPPUSTATUS(){
-	vblankStatus = false;
+	
 	byte result = (int)vblank*0x80 + (int)sprite0hit*0x40 + (int)spriteOverflow*0x20;
+	vblank = false;
 	//cout << "PPUStatus Read: " << hex << (int)result;
 	return result;
 	
@@ -419,4 +457,8 @@ int PPU::fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attr
 
 bool PPU::getNMI(){
 	return nmiEnable;
+}
+
+bool PPU::getVBlank(){
+	return vblank;
 }

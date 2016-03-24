@@ -84,7 +84,7 @@ void CPU::stop(string reason){
 
 //Function to be called each time the system cycles, to perform CPU tasks.
 void CPU::cycle(){
-	if(ptr_nesPPU->vblank==true && ptr_nesPPU->vblankSeen==false && ptr_nesPPU->getNMI()==true){
+	if(ptr_nesPPU->getVBlank()==true && ptr_nesPPU->vblankSeen==false && ptr_nesPPU->getNMI()==true){
 		ptr_nesPPU->vblankSeen=true;
 		triggerInterrupt(NMI);
 	}
