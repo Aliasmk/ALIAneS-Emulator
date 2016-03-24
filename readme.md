@@ -6,23 +6,15 @@
 
 CPU Complete! Bronze goal achieved! 
 
-Over the next few weeks I'll be cleaning up the CPU code and publishing some research logs on my blog. From there I'll start on my PPU research, and finally start the PPU.
-
-###August Shell Update###
-After a couple months of my computer being out of commission, plus a new co-op job, I haven't had much time to work on the project. But I've made some progress: the August shell update is my first major release in a couple months and it includes a new "front end" that can be used to run the emulator as normal, or in a test mode. In this test mode you can write to memory and execute at different locations. It's quite finiky though...
-
-###Testing the Emulator###
-First, download the latest version of the code and compile it. If you can use make and gcc, type `make` then `make run` to start. Otherwise compile as you would normally. Run the bin in a terminal. Typing `start` will search for a "nestest.nes" file in the /res directory, you must supply this yourself. `Test` will initialize the CPU and allow you to `read` and `write` to memory, and either `decode` and execute an opcode at a location, or `execute` an opcode, which will use the subsequent memory. `end` finishes this mode, or just type `quit` to end the program. Not much error checking for inputs has been implemented, so be careful.
-
-###Regarding the Master Branch###
-Up until now I've been working completely off the master branch. Now that the CPU is functional however, I want to maintain assurance of having a working copy always avaliable, especially if I want to make some CPU modifications while I'm working on the PPU. For this reason I'm going to be much more disciplined with the master branch and only things like readme edits will be pushed through direct to master.
+PPU in development! We have basic emulation of background and sprites. Donkey Kong, Pinball and other simple games work great.
+Scrolling, sprite 0 hit, palettes, masking and other features still need to be implemented.
 
 ###Project Goals###
 
 I have a tier'd goal structure for this project:
 
 - Bronze: Achieve CPU emulation - DONE!
-- Silver: Achieve PPU emulation. Games should run at >5 frames per second
+- Silver: Achieve PPU emulation. Games should run at >5 frames per second. 
 - Gold: Add very basic mapper support. Games should approach comfortable speeds if not already.
 - Platinum: Add more mapper support and APU emulation. Games should run at or higher than full speed.
 

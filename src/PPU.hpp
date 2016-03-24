@@ -11,7 +11,7 @@
 #include <iostream>
 #include "SDLrender.hpp"
 
-
+//TODO clean up header and class.
 class PPU {
 	private:
 	typedef std::uint8_t byte;
@@ -32,6 +32,8 @@ class PPU {
 	byte ppuMemory[0x3FFF];
 	//OAM memory contains information about how sprites are rendered.
 	byte oamMemory[0xFF];
+	byte oamMemorySec[0x20];
+	int spriteIndex;
 	
 	
 	//STATE TRACKING//
@@ -84,8 +86,8 @@ class PPU {
 	
 	//2000 - PPUCTRL - WRITE
 	bool nmiEnable;
-	bool ppuMode;
-	bool spriteHeight;
+	bool ppuMode;	//TODO implement 2000 ppuMode
+	bool spriteHeight; //TODO implement 2000 spriteHeight
 	bool backgroundPatternTable;
 	bool spritePatternTable;
 	bool vramIncrementMode;
@@ -93,19 +95,19 @@ class PPU {
 	
 	
 	//2001 - PPUMASK - WRITE
-	bool emphasizeBlue;
-	bool emphasizeGreen;
-	bool emphasizeRed;
-	bool showSprites;
-	bool showBackground;
-	bool showLeftSprites;
+	bool emphasizeBlue; 	//TODO implement 2001 eB
+	bool emphasizeGreen;	//TODO implement 2001 eG
+	bool emphasizeRed;		//TODO implement 2001 eG
+	bool showSprites;		
+	bool showBackground;	
+	bool showLeftSprites;	
 	bool showLeftBackground;
-	bool greyscale;
+	bool greyscale;			//TODO implement 2001 greyscale
 	
 	//2002 - PPUSTATUS - READ
-	bool vblankStatus;
+	bool vblank;
 	bool sprite0hit;
-	bool spriteOverflow;
+	bool spriteOverflow;	//TODO implement 2002 spriteOverflow
 	
 	//2003 - OAMADDR - WRITE
 	byte oamAddress;
@@ -114,7 +116,7 @@ class PPU {
 	byte oamValue;
 	
 	//2005 - PPUSCROLL - WRITE 2x
-	bool scrollFirstWrite;
+	bool scrollFirstWrite;	//TODO implement whole 2005 scroll
 	byte ppuscroll_scrollPosX;
 	byte ppuscroll_scrollPosY;
 	
@@ -138,15 +140,19 @@ class PPU {
 	void stop();
 	void cycle();
 	void ppuWriteMem(int address, byte value);
+	void ppuWriteOAM(int address, byte value);
+	void ppuWriteSecOAM(int address, byte value);
 	byte ppuReadMem(int address);
+	byte ppuReadOAM(int address);
+	byte ppuReadSecOAM(int address);
 	byte readRegister(int accessReg, int readWrite);
 
 	int ppuR;
 	int ppuG;
 	int ppuB;
 	
-	bool vblank;
-	bool vblankSeen;
+	bool vblankStatus;  //vblank flag
+	bool vblankSeen;	//vblank seen by CPU
 	
 	bool frameEnd;
 	
@@ -158,6 +164,7 @@ class PPU {
 	void writeOAMADDR(byte in);
 	void writeOAMDATA(byte in);
 	byte readOAMDATA();
+	void clearSecOAM();
 	void writePPUSCROLL(byte in);
 	void writePPUADDR(byte in);
 	void writePPUDATA(byte in);
@@ -165,5 +172,7 @@ class PPU {
 	void writeOAMDMA();
 	bool getNMI();
 	int fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf);
+	int fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attributes);
+	bool getVBlank();
 };
 #endif
