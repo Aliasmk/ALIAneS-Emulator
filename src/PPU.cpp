@@ -39,6 +39,9 @@ void PPU::start(SDLrender* r){
 	showBackground=true;
 	showLeftSprites=true;
 	showLeftBackground=true;
+	ppuscroll_scrollPosX = 0;
+	ppuscroll_scrollPosY = 0;
+	scrollFirstWrite=true;
 	
 	cout << "PPU Initialization: Complete" << endl;
 	
@@ -88,7 +91,7 @@ byte PPU::ppuReadSecOAM(int address){
 void PPU::cycle(){
 	//cout << "PPU" << endl;
 	//cout << "vram address: " << vramAddr << endl;
-	
+	//cout << "X: " << dec << (int)ppuscroll_scrollPosX << ", Y: " << dec << (int)ppuscroll_scrollPosY << endl;
 	//if(scanLine == 241 && cycles==1 && nmiEnable){
 	if(scanLine == 241 && cycles==1){
 		vblank = true;
@@ -103,7 +106,12 @@ void PPU::cycle(){
 		sprite0hit = false;
 		spriteOverflow = false;
 		//cout << endl<< "vBlank ends" <<endl;
+		
+		if(frame%24 ==0){
+			cout << "X: " << dec << (int)ppuscroll_scrollPosX << ", Y: " << dec << (int)ppuscroll_scrollPosY << endl;
+			}
 	}
+	
 	
 	if(cycles < 340)
 		cycles++;
@@ -134,6 +142,7 @@ void PPU::cycle(){
 			
 		}else{
 			scanLine = 0;
+			
 			frame++;
 			/*cout << endl << endl;
 			
@@ -175,7 +184,24 @@ void PPU::cycle(){
 	//int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
 	int color;
 	//color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
-	int tileID = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
+	//int tileID = ppuReadMem(0x2000+0x20*floor(scanLine+(floor(ppuscroll_scrollPosY/8))/8)+floor(cycles+(floor(ppuscroll_scrollPosX/8))/8));
+	int tileOffsetX = floor(ppuscroll_scrollPosX/8);
+	int tileOffsetY = floor(ppuscroll_scrollPosY/8);
+	
+	int tileAddress = 0x2000+(0x20*floor(scanLine/8)+tileOffsetY)+floor(cycles/8)+tileOffsetX;
+	
+	if(tileAddress > 0x2000+(floor(scanLine/8)+1)*0x20){
+		tileAddress += 0x400;
+	}
+	
+	
+	
+	int tileID = ppuReadMem(tileAddress);
+	
+	
+	
+	//cout << "X: " << dec << (int)ppuscroll_scrollPosX << ", Y: " << dec << (int)ppuscroll_scrollPosY << endl;
+	
 	
 	if(showBackground){
 		color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
@@ -342,14 +368,20 @@ byte PPU::readOAMDATA(){
 }
 
 void PPU::writePPUSCROLL(byte in){
-	if(nDebugging)
-		cout << endl << "PPUSCROLL write: " << hex << (int)in << endl;
-	if(scrollFirstWrite)
-		ppuscroll_scrollPosX = in;
-	else
-		ppuscroll_scrollPosY = in;
-		
-	scrollFirstWrite = !scrollFirstWrite;
+	//if(nDebugging)
+	
+	//if(scanLine <=240){
+	
+		if(scrollFirstWrite){
+			ppuscroll_scrollPosX = in;
+			cout << endl << "PPUSCROLL X write: " << hex << floor((int)ppuscroll_scrollPosX/8) ;
+		}else{
+			ppuscroll_scrollPosY = in;
+			cout << endl << "PPUSCROLL Y write: " << hex << floor((int)ppuscroll_scrollPosY/8) ;
+		}	
+		cout << " at cycle " << dec << (int)cycles << ", scanline " << (int)scanLine << " frame " << (int)frame << endl;
+		scrollFirstWrite = !scrollFirstWrite;
+	//}
 }
 	
 void PPU::writePPUADDR(byte in){

@@ -116,9 +116,9 @@ class PPU {
 	byte oamValue;
 	
 	//2005 - PPUSCROLL - WRITE 2x
-	bool scrollFirstWrite;	//TODO implement whole 2005 scroll
-	byte ppuscroll_scrollPosX;
-	byte ppuscroll_scrollPosY;
+	bool scrollFirstWrite;	
+	byte ppuscroll_scrollPosX; //TODO implement 2005 scrollX 
+	byte ppuscroll_scrollPosY; //TODO implement 2005 scrollY
 	
 	//2006 - PPUADDR - WRITE 2x
 	bool addrFirstWrite;
