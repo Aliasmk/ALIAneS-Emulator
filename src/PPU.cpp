@@ -89,14 +89,9 @@ byte PPU::ppuReadSecOAM(int address){
 
 
 void PPU::cycle(){
-	//cout << "PPU" << endl;
-	//cout << "vram address: " << vramAddr << endl;
-	//cout << "X: " << dec << (int)ppuscroll_scrollPosX << ", Y: " << dec << (int)ppuscroll_scrollPosY << endl;
-	//if(scanLine == 241 && cycles==1 && nmiEnable){
 	if(scanLine == 241 && cycles==1){
 		vblank = true;
 		vblankStatus = true;
-		//ptr_nesCPU->triggerInterrupt(1);
 		//cout << endl<< "vBlank begins" <<endl;
 	}
 	if(scanLine == 261 && cycles==1){
@@ -106,126 +101,65 @@ void PPU::cycle(){
 		sprite0hit = false;
 		spriteOverflow = false;
 		//cout << endl<< "vBlank ends" <<endl;
-		
 		if(frame%24 ==0){
 			cout << "X: " << dec << (int)ppuscroll_scrollPosX << ", Y: " << dec << (int)ppuscroll_scrollPosY << endl;
-			}
+		}
 	}
-	
 	
 	if(cycles < 340)
 		cycles++;
 	else {
 		cycles = 0;
 		if(scanLine < 261){
-			
 			clearSecOAM();
-			
 			for(int i = 0; i<64;i++){
 				if(spriteIndex > 7) break;
-				
 				if(scanLine+1-(ppuReadOAM(i*4))<8 && scanLine+1-(ppuReadOAM(i*4))>=0 && scanLine < 240){
-					//cout << dec << (int)ppuReadOAM(i*4) << " - " << scanLine << " = " << ppuReadOAM(i*4)-scanLine << endl;
-					//cout << "Sprite " << spriteIndex << " data: ";
 					for(int n = 0; n<4; n++){
 						ppuWriteSecOAM((spriteIndex*4)+n, ppuReadOAM((i*4)+n));
-						//cout << hex << (int)ppuReadSecOAM(spriteIndex*4+n) << " ";
 					}
-					//cout << endl;
-					
 					spriteIndex++;
 				}
 			}
-			
-			
 			scanLine++;
-			
 		}else{
 			scanLine = 0;
-			
 			frame++;
-			/*cout << endl << endl;
-			
-			for(int y = 0; y<=29;y++){
-				for(int x = 0; x<31; x++)
-				{
-					cout << << " ";				
-				}
-				cout << endl;
-			}
-			
-			
-			cout << endl << endl;*/
-			
-			
-			
-			
-			//cout << "Sprites on screen: " << endl;
-			/*for(int i = 0; i<256; i+=4){
-				if(oamMemory[i] != 0xf0 && oamMemory[i+1] != 0xf0 && oamMemory[i+2] != 0xf0 && oamMemory[i+3] != 0xf0)
-					cout << "(" << floor(i/4) << ") tile " << hex << (int)oamMemory[i+1] << " at SL/C " << hex << (int)oamMemory[i] << "/" << (int)oamMemory[i+3] << " w attribute value " <<  (int)oamMemory[i+2] << endl;
-			}*/
-			
-			
 			frameEnd = true;
 			SDLrenderer->onFrameEnd();
-			
-			
-		
-			
-			//cout << "PPU render: " << frame << endl;
 		}
 	}
 	
-	
-	
-	
-	//cout << "PPU cycle " << cycles << " in scanline " << scanLine << " of frame " << frame << endl;
-	//int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
-	int color;
-	//color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
-	//int tileID = ppuReadMem(0x2000+0x20*floor(scanLine+(floor(ppuscroll_scrollPosY/8))/8)+floor(cycles+(floor(ppuscroll_scrollPosX/8))/8));
+	//DEBUG SCROLL TEMP START 
+	int nameTableSelect = 0x2000;
 	int tileOffsetX = floor(ppuscroll_scrollPosX/8);
 	int tileOffsetY = floor(ppuscroll_scrollPosY/8);
-	
 	int tileAddress = 0x2000+(0x20*floor(scanLine/8)+tileOffsetY)+floor(cycles/8)+tileOffsetX;
-	
-	if(tileAddress > 0x2000+(floor(scanLine/8)+1)*0x20){
-		tileAddress += 0x400;
-	}
-	
+	int endOfNT = nameTableSelect+((floor((scanLine)/8)+1))*0x20;
+	if(tileAddress > endOfNT){
+		nameTableSelect = 0x2400;
+	} 
+	tileAddress = nameTableSelect+(0x20*floor(scanLine/8)+tileOffsetY)+floor(cycles/8)+tileOffsetX;
 	
 	
 	int tileID = ppuReadMem(tileAddress);
 	
-	
-	
-	//cout << "X: " << dec << (int)ppuscroll_scrollPosX << ", Y: " << dec << (int)ppuscroll_scrollPosY << endl;
-	
+	//TODO implement palette
+	int color;
 	
 	if(showBackground){
 		color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
 	} else {
-		color = 0;
+		color = 0; //do not draw background
 	}
-	
-	/*if(!showBackground || (cycles<8 && showLeftBackground)){
-		color = 0;
-	} else {
-		color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
-	}*/
 	
 	if(!showSprites || (cycles<8 && showLeftSprites)){
 		; //do not draw sprites
 	} else {
-		
-		
 		int spriteColor;
 		for(int i = 0; i<= spriteIndex; i++){
-	
 			if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>=0){
 				spriteColor = fetchSpritePixel(ppuReadSecOAM(i*4+1),scanLine-ppuReadSecOAM(i*4), cycles-ppuReadSecOAM(i*4+3), spritePatternTable, ppuReadSecOAM(i*4+2));
-			
 				//Sprite zero hit detection: uses the background color value just assigned to 
 				//check if the sprite has drawn an opaque pixel over a opaque background pixel
 				if(i==0 && color!=0 && spriteColor!=0){
@@ -237,46 +171,21 @@ void PPU::cycle(){
 				if(spriteColor != 0){
 					color = spriteColor;
 				}
-				
-			//if(tempcolor != 0) 
-			//	color = tempcolor;	
-			
-			
 			}	
 		
 		
 		}
-	} 
-	
-	/*int tempColor = 0;
-	for(int i = 0; i<64;i++){
-		if(ppuReadOAM(i*4) < 0xF0 || (scanLine-ppuReadOAM(i*4)<8 && cycles-ppuReadOAM((i*4)+3)<8)){
-			tempColor = fetchTilePixel(ppuReadOAM((i*4)+1), scanLine-ppuReadOAM((i*4))-1, cycles-ppuReadOAM((i*4)+3), spritePatternTable);		
-			if(tempColor != 0){
-				color = tempColor;
-			}	
-		}
-	}*/
-	
+	}
 	color = color*85;
 	
-	/*if(color == 0x24){
-		color = 0;
-	}else{*/
-		//color *= 1;
-		//if(color > 0xFF)
-		//	color = 0xFF;
-	//}
-	
-	//color += (cycles%255) - (frame%255)*2;
 	ppuR = color;
 	ppuG = color;
 	ppuB = color; 
 	
-	//ppuR += frame%255;
-	//ppuG += (scanLine%255);//+(frame%255)/5;
-	
-	
+	//DEBUG nametable
+	if(tileAddress > 0x2400){
+		ppuR = 0xFF;
+	}
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
@@ -312,8 +221,6 @@ void PPU::writePPUCTRL(byte in){
 	spritePatternTable = in&0x8;		//0=0000h, 1=1000h
 	vramIncrementMode = in&0x4; 		//0= add 1, going across, 1= add 32, going down*/
 	baseNametableAddress = in&0x3; 		//(0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)
-	
-	
 }
 
 void PPU::writePPUMASK(byte in){
@@ -374,12 +281,12 @@ void PPU::writePPUSCROLL(byte in){
 	
 		if(scrollFirstWrite){
 			ppuscroll_scrollPosX = in;
-			cout << endl << "PPUSCROLL X write: " << hex << floor((int)ppuscroll_scrollPosX/8) ;
+			//cout << endl << "PPUSCROLL X write: " << hex << floor((int)ppuscroll_scrollPosX/8) ;
 		}else{
 			ppuscroll_scrollPosY = in;
-			cout << endl << "PPUSCROLL Y write: " << hex << floor((int)ppuscroll_scrollPosY/8) ;
+			//cout << endl << "PPUSCROLL Y write: " << hex << floor((int)ppuscroll_scrollPosY/8) ;
 		}	
-		cout << " at cycle " << dec << (int)cycles << ", scanline " << (int)scanLine << " frame " << (int)frame << endl;
+		//cout << " at cycle " << dec << (int)cycles << ", scanline " << (int)scanLine << " frame " << (int)frame << endl;
 		scrollFirstWrite = !scrollFirstWrite;
 	//}
 }

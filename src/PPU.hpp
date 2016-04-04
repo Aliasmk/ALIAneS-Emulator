@@ -20,10 +20,11 @@ class PPU {
 	long startTime;
 	long endTime;
 	
-	//VRAM address
-	int vramAddr;
-	
-	
+	//PPU registers
+	uint16_t vramAddr;
+	uint16_t vramAddrTemp;
+	char fin;
+	bool writeToggle;
 	
 	
 	//MEMORY//
@@ -52,7 +53,7 @@ class PPU {
 	int frame;
 	
 	
-	//RENDERING - http://wiki.nesdev.com/w/index.php/PPU_rendering//
+	//RENDERING - http://wiki.nesdev.com/w/index.php/PPU_rendering// SOME OF THIS IS UNUSED
 	
 	//Two nameTable addresses are held in memory and are read and written from.
 	byte nameTable1;
