@@ -23,6 +23,7 @@ class SDLrender {
 			byte blue;
 		};
 		Pixel frameBuffer[SCREEN_WIDTH][SCREEN_HEIGHT];
+		Pixel frameBufferOdd[SCREEN_WIDTH][SCREEN_HEIGHT];
 		
 		int gy;
 		int gx;

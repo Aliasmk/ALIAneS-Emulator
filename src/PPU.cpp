@@ -173,7 +173,8 @@ void PPU::cycle(){
 	
 	//cout << "PPU cycle " << cycles << " in scanline " << scanLine << " of frame " << frame << endl;
 	//int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
-	int color;
+	int color = 0;
+	
 	//color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
 	int tileID = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
 	
