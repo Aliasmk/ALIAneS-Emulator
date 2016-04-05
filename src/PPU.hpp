@@ -21,10 +21,11 @@ class PPU {
 	long endTime;
 	
 	//PPU registers
-	uint16_t vramAddr;
-	uint16_t vramAddrTemp;
-	char fin;
+	int vramAddr;
+	int vramAddrTemp;
+	char fineXScroll;
 	bool writeToggle;
+	
 	
 	
 	//MEMORY//
@@ -131,7 +132,7 @@ class PPU {
 	
 	//4014 - OAMDMA - WRITE
 	
-	
+	int mirrorMode;
 	
 	void testReadPatternTable();
 	
@@ -175,5 +176,6 @@ class PPU {
 	int fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf);
 	int fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attributes);
 	bool getVBlank();
+	void setMirrorMode(int mode);
 };
 #endif

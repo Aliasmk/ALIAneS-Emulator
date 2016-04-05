@@ -5,20 +5,21 @@ HEAD=Cartridge.hpp CPU.hpp PPU.hpp SDLrender.hpp Shell.hpp System.hpp
 OBJ=Cartridge.o CPU.o PPU.o SDLrender.o Shell.o System.o
 
 
-all:
-	g++ *.hpp -g
-	g++ *.cpp $(CFLAGS) -o ../bin/ALIAneSX
 
-full: 
-	
-	(CC) -c $(CFILE) -g
-	//$(CC) -o ../bin/ALIAneS $(OBJ) $(CFLAGS)
+
+all: 	
+	$(CC) -c $(CFILE) -g
+	$(CC) -o ../bin/ALIAneS $(OBJ) $(CFLAGS)
 	rm *.o
+	
+debug:
+	g++ *.hpp -g
+	g++ *.cpp $(CFLAGS) -o ../bin/ALIAneS
 
 run:
 	../bin/ALIAneS
 
-debug:
+gdb:
 	gdb-apple ../bin/ALIAneS
 
 test:

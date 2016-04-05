@@ -106,6 +106,7 @@ bool System::init(){
 		status = false;
   	
 	nesPPU->start(getRenderer());
+	nesPPU->setMirrorMode(cart->getMirrorMode());
 	nesCPU->start();
 	
 	setPowerState(true);

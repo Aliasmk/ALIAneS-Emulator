@@ -34,7 +34,7 @@ class Cartridge {
 	public:
 		Cartridge(std::string cartPath, CPU* nesCPU, PPU* nesPPU);
 		void unloadCartridge();	
-		
+		int getMirrorMode();
 		
 		bool isValid();
 };

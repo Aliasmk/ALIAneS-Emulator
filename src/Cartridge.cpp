@@ -74,6 +74,11 @@ void Cartridge::openCartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *
 			}
 			
 			std::cout << "ROM Import: Complete ("<< cartPath <<")"<<std::endl;
+			if(getMirrorMode() == 1){
+				std::cout << "Vertical Mirroring" << std::endl;
+			} else if(getMirrorMode() == 0){
+				std::cout << "Horizontal Mirroring" << std::endl;
+			}
 	}
 	else{
 		std::cout << "ROM Import: Failed - File unreadable ("<< cartPath << ")" <<std::endl;
@@ -107,6 +112,12 @@ void Cartridge::parseHeader(){
 void Cartridge::unloadCartridge(){
 	currentCart.close();
 	//currentCart = null;
+}
+
+//1 = vert mirror 0 = horiz mirror
+int Cartridge::getMirrorMode(){
+	return header[6]&0x1;
+	//TODO 4 screen mode
 }
 
 bool Cartridge::isValid(){
