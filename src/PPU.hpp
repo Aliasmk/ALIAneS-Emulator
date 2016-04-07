@@ -26,6 +26,8 @@ class PPU {
 	char fineXScroll;
 	bool writeToggle;
 	
+	byte readBuffer;
+	
 	
 	
 	//MEMORY//
