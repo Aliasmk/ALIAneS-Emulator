@@ -184,13 +184,6 @@ void PPU::cycle(){
 		vblank = true;
 		vblankStatus = true;
 	}
-	if(scanLine == 261 && cycles==1){
-		vblank = false;
-		vblankStatus = false;
-		vblankSeen = false;
-		sprite0hit = false;
-		spriteOverflow = false;
-	}
 	
 	
 	if(cycles == 256 && (showSprites || showBackground)){
@@ -212,8 +205,23 @@ void PPU::cycle(){
 				coarseY++;
 			}
 			vramAddr = (vramAddr & ~0x03E0) | (coarseY << 5 );
+			
 		}
 	}
+	
+	
+	
+	if(scanLine < 240 && cycles <= 256 && (showSprites || showBackground)){
+		if(cycles%8 == 0){
+			if((vramAddr & 0x001F) == 31){
+				vramAddr &= ~0x001F; //Coarse X = 0
+				vramAddr ^= 0x0400;	 //Switch nametables
+			} else {
+				vramAddr += 1;	//increment coarse x
+			}	
+		}
+	}
+	
 	if(cycles == 257 && (showSprites || showBackground)){
 		//Copy horizontal position bits
 		//v: .....F.. ...EDCBA = t: ....F.. ...EDCBA
@@ -224,22 +232,21 @@ void PPU::cycle(){
 		//vramAddr = vramAddrTemp;	
 		
 	}
+	
+	if(scanLine == 261 && cycles==1){
+		vblank = false;
+		vblankStatus = false;
+		vblankSeen = false;
+		sprite0hit = false;
+		spriteOverflow = false;
+	}
+	
+	
 	if(scanLine == 261 && cycles >= 280 && cycles <= 304 && (showSprites || showBackground)){
 		//copy vertical bits
 		//v: .IHGF.ED CBA..... = t: .IHGF.ED CBA.....
 		vramAddr &= ~(0x7BE0);
 		vramAddr |= (vramAddrTemp&0x7BE0);
-	}
-	
-	if(cycles <= 256 && (showSprites || showBackground)){
-		if(cycles%8 == 0){
-			if((vramAddr & 0x001F) == 31){
-				vramAddr &= ~0x001F;
-				vramAddr ^= 0x0400;
-			} else {
-				vramAddr += 1;
-			}	
-		}
 	}
 	
 	if(cycles < 340)
@@ -505,8 +512,10 @@ void PPU::writePPUADDR(byte in){
 		
 		vramAddr = vramAddr%0x4000;
 		//FIXME vram set assertion
-		//assert(vramAddr <= 0x3FFF);
-		//cout << "VRAM address changed to " << vramAddr;
+		assert(vramAddr <= 0x3FFF);
+		if(nDebugging){
+			cout << "VRAM address changed to " << vramAddr;
+		}
 		writeToggle=false;
 		
 		//FIXME remove
@@ -524,17 +533,24 @@ void PPU::writePPUADDR(byte in){
 }
 
 void PPU::writePPUDATA(byte in){
+	
+	int writeLocation = vramAddr % 0x4000;
+	assert(writeLocation <= 0x3FFF);
+	
 	//TODO PPUDATA WRITE
 	if(nDebugging){
 	
-		cout << endl << "PPUDATA WRITE: " <<  hex << (int)in << " to vram addr " << hex << vramAddr << endl;
+		//cout << endl << "PPUDATA WRITE: " <<  hex << (int)in << " to vram addr " << hex << writeLocation << endl;
 	
 	}
 	
+	if(in == 0x4B || in == 0x4F)
+			cout << endl << "PPUDATA WRITE: " <<  hex << (int)in << " to vram addr " << hex << writeLocation << endl;
+	
 	//FIXME vram write assertion
 	
-	ppuWriteMem(vramAddr,in);
-	//assert(vramAddr <= 0x3FFF);
+	ppuWriteMem(writeLocation,in);
+	
 	if(vramIncrementMode)
 		vramAddr+=32;
 	else
@@ -544,14 +560,22 @@ void PPU::writePPUDATA(byte in){
 byte PPU::readPPUDATA(){
 	//TODO PPUDATA READ
 	
-	byte temp = ppuReadMem(vramAddr);
+	int readLocation = vramAddr % 0x4000;
+	assert(readLocation <= 0x3FFF);
 	
-	byte out = readBuffer;
-	readBuffer = temp;
+	byte temp = ppuReadMem(readLocation);
+	byte out;
+	if(vramAddr < 0x3F00){
+		out = readBuffer;
+		readBuffer = temp;
 	
-	//assert(vramAddr <= 0x3FFF);
+	} else {
+		out = temp;
+		readBuffer = temp;
+	}
+	
 	if(nDebugging)
-		cout << endl << "PPUDATA READ: " <<  hex << (int)out << " from vram addr " << hex << vramAddr << endl;
+		cout << endl << "PPUDATA READ: " <<  hex << (int)out << " from vram addr " << hex << readLocation << endl;
 	if(vramIncrementMode)
 		vramAddr+=32;
 	else
