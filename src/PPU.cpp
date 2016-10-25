@@ -606,6 +606,7 @@ int PPU::fetchTilePixel(int tileID, int nextTileID, int scanL, int cyc, bool ptH
 	uint16_t ppuTileLineAddress;
 	int tempfineXScroll = fineXScroll;
 	
+	//SCROLLING WORKS
 	if(((cyc-1)%8)>(7-tempfineXScroll)){
 			tileID = nextTileID;
 			cyc = ((cyc-1)%8)-(7-tempfineXScroll);
