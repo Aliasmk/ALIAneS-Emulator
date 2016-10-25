@@ -64,6 +64,7 @@ void PPU::stop(){
 
 //MEMORY FUNCTIONS
 
+//WRITING
 void PPU::ppuWriteMem(int address, byte value){
 	address = address%0x4000;
 	assert(address <= 0x3FFF);
@@ -111,7 +112,8 @@ void PPU::ppuWriteMem(int address, byte value){
 		ppuMemory[address] = value;
 	}
 	
-	//Memory Mirroring
+	//Memory Mirroring 
+	//TODO What is this
 	if(address >= 0x2000 && address <= 0x2EFF){
 		offset = address - 0x2000;
 		ppuMemory[0x3000+offset] = value;
@@ -122,13 +124,8 @@ void PPU::ppuWriteMem(int address, byte value){
 		ppuMemory[0x3F20+offset]=value;
 	}
 	
-	
 	//cout << "writing value " << hex << (int)value << " to PPU address " << (int)address << endl;
 }
-
-/*void PPU::ppuWrite(value){
-
-}*/
 
 void PPU::ppuWriteOAM(int address, byte value){
 	oamMemory[address] = value;
@@ -138,33 +135,17 @@ void PPU::ppuWriteSecOAM(int address, byte value){
 	oamMemorySec[address] = value;
 	//cout << "writing value " << hex << (int)value << " to PPU Sec OAM address " << (int)address << endl;
 }
+
+//READING
+//TODO memory access takes 2 cycles? http://wiki.nesdev.com/w/index.php/PPU_rendering
 byte PPU::ppuReadMem(int address){
-	address = address % 0x4000;
+	//address = address % 0x4000;
 	assert(address <= 0x3FFF);
-	//1 = vert mirror 0 = horiz mirror
-	/*int offset;
-	if(address >= 0x2400 && address < 0x2800){
-		offset = address-0x2400;
-		if(mirrorMode == 0){
-			address = 0x2000 + offset;
-		} else if (mirrorMode == 1)	{
-			//address = address;
-		}
-	} else if ( address >= 0x2800 && address < 0x2C00 ){
-		offset = address-0x2800;
-		if(mirrorMode == 0){
-			address = 0x2000 + offset;
-		} else if (mirrorMode == 1)	{
-			//address = address;
-		}
-	} else if ( address >= 0x2C00 && address < 0x3000){
-		offset = address-0x2800;
-		if(mirrorMode == 0){
-			address = 0x2400 + offset;
-		} else if (mirrorMode == 1)	{
-			address = 0x2800 + offset;
-		}
-	}*/
+	
+	//System Memory Mirroring
+	//if(address >= 0x0 && address < 0x2000){
+	//	address &= 0x07FF;
+	//}
 	
 	return ppuMemory[address];	
 }
@@ -175,192 +156,13 @@ byte PPU::ppuReadSecOAM(int address){
 	return oamMemorySec[address];
 }
 
-//CYCLE FUNCTION
-
-void PPU::cycle(){
-	
-	//Overrides @ 241,1 and 261,1
-	if(scanLine == 241 && cycles==1){
-		vblank = true;
-		vblankStatus = true;
-	}
-	
-	
-	if(cycles == 256 && (showSprites || showBackground)){
-		//Y incrementing
-		//cout << showSprites << " - " << showBackground << endl;
-		if((vramAddr & 0x7000) != 0x7000){ //fine y < 7
-			//cout << (vramAddr & 0x7000) << endl;
-			vramAddr += 0x1000; //Add one to fine y
-		} else {
-			vramAddr &= ~0x7000; //fine y = 0;
-			int coarseY = (vramAddr & 0x03E0) >> 5; //y is coarse y
-			//cout << "sL " << scanLine << " - cY " << coarseY << endl;
-			if(coarseY == 29){
-				coarseY = 0;
-				vramAddr ^= 0x0800; //switch vertical nametable
-			} else if( coarseY == 31 ){
-				coarseY = 0;
-			} else {
-				coarseY++;
-			}
-			vramAddr = (vramAddr & ~0x03E0) | (coarseY << 5 );
-			
-		}
-	}
-	
-	
-	
-	if(scanLine < 240 && cycles <= 256 && (showSprites || showBackground)){
-		if(cycles%8 == 0){
-			if((vramAddr & 0x001F) == 31){
-				vramAddr &= ~0x001F; //Coarse X = 0
-				vramAddr ^= 0x0400;	 //Switch nametables
-			} else {
-				vramAddr += 1;	//increment coarse x
-			}	
-		}
-	}
-	
-	if(cycles == 257 && (showSprites || showBackground)){
-		//Copy horizontal position bits
-		//v: .....F.. ...EDCBA = t: ....F.. ...EDCBA
-		
-		vramAddr &= ~(0x041F);
-		vramAddr |= (vramAddrTemp&0x041F);
-		
-		//vramAddr = vramAddrTemp;	
-		
-	}
-	
-	if(scanLine == 261 && cycles==1){
-		vblank = false;
-		vblankStatus = false;
-		vblankSeen = false;
-		sprite0hit = false;
-		spriteOverflow = false;
-	}
-	
-	
-	if(scanLine == 261 && cycles >= 280 && cycles <= 304 && (showSprites || showBackground)){
-		//copy vertical bits
-		//v: .IHGF.ED CBA..... = t: .IHGF.ED CBA.....
-		vramAddr &= ~(0x7BE0);
-		vramAddr |= (vramAddrTemp&0x7BE0);
-	}
-	
-	if(cycles < 340)
-		cycles++;
-	else {
-		//End of scanline
-		cycles = 0;
-		//Increment scanline or increment frame
-		if(scanLine < 261){
-			//Spite evaluation on each scanline beginning 
-			clearSecOAM();
-			for(int i = 0; i<64;i++){
-				if(spriteIndex > 7) break;
-				if(scanLine+1-(ppuReadOAM(i*4))<8 && scanLine+1-(ppuReadOAM(i*4))>=0 && scanLine < 240){
-					for(int n = 0; n<4; n++){
-						ppuWriteSecOAM((spriteIndex*4)+n, ppuReadOAM((i*4)+n));
-					}
-					spriteIndex++;
-				}
-			}
-			//Increment Scanline
-			scanLine++;
-		}else{
-			//End of frame
-			scanLine = 0;
-			frame++;
-			frameEnd = true;
-			SDLrenderer->onFrameEnd();
-		}
-	}
-	
-	
-	
-	int tileAddr = (0x2000 | (vramAddr& 0x0FFF));
-
-	//int tileAddr = 0x2000+(0x20*floor(scanLine/8))+floor(cycles/8);
-	//if(frame > 400)
-	// 	cout << "finex: " << hex << (int)fineXScroll << endl;
-		
-	int tileID = ppuReadMem(tileAddr);
-	int nextTileID = ppuReadMem(tileAddr+1);
-	
-	//cout << hex << "vram @ " << cycles << ", " << scanLine << ", " << frame <<" -> " << vramAddr <<" -> tile addr -> " << tileAddr << " -> tile -> " << tileID << endl;
-	
-	//TODO implement palette
-	int color;
-	
-	if(showBackground){
-		//cout << dec <<" frame " << frame << " sl " << scanLine << " dot " << cycles << hex << "tileAddr " << (0x2000 | (vramAddr& 0x0FFF)) << endl;
-		color = fetchTilePixel(tileID, nextTileID, scanLine, cycles, backgroundPatternTable);
-		
-		//color = tileID;
-	} else {
-		color = 0; //do not draw background
-	}
-	
-	if(!showSprites || (cycles<8 && showLeftSprites)){
-		; //do not draw sprites
-	} else {
-		int spriteColor;
-		for(int i = 0; i<= spriteIndex; i++){
-			if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>=0){
-				spriteColor = fetchSpritePixel(ppuReadSecOAM(i*4+1),scanLine-ppuReadSecOAM(i*4), cycles-ppuReadSecOAM(i*4+3), spritePatternTable, ppuReadSecOAM(i*4+2));
-				//Sprite zero hit detection: uses the background color value just assigned to 
-				//check if the sprite has drawn an opaque pixel over a opaque background pixel
-				if(i==0 && color!=0 && spriteColor!=0){
-					//Sprite 0 hit detected
-					//cout << "Sprite 0 hit" << endl;
-					sprite0hit=true;
-				}
-			
-				if(spriteColor != 0){
-					color = spriteColor;
-				}
-			}	
-		
-		
-		}
-	}
-	color = color*85;
-	
-	ppuR = color;
-	ppuG = color;
-	ppuB = color; 
-	
-	/*if((0x2000 | (vramAddr& 0x0FFF)) > 0x2400){
-		if(cycles%8 == 0){
-			ppuR = 0xFF;
-		}
-	}
-	
-	if((0x2000 | (vramAddr& 0x0FFF)) > 0x2800){
-		if(cycles%8 == 2){
-			ppuG = 0xFF;
-		}
-	}
-	
-	if((0x2000 | (vramAddr& 0x0FFF)) > 0x2C00){
-		if(cycles%8 == 4){
-			ppuB = 0xFF;
-		}
-	}*/
-	
-	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
-	SDLrenderer->setDrawLoc(cycles, scanLine);
-	SDLrenderer->renderPixelCallback();
-}
 
 
-//Reading and writing of the PPU registers. 
+
+//READING AND WRITING OF PPU REGISTERS
+
 //These are public methods that will usually be called by the CPU
-
 //condition ? expression1 : expression2
-
 void PPU::writePPUCTRL(byte in){
 	if(nDebugging)
 		cout << endl << "PPUCTRL Write: " << hex << (int)in << endl;
@@ -448,9 +250,6 @@ byte PPU::readOAMDATA(){
 }
 
 void PPU::writePPUSCROLL(byte in){
-		
-		
-		
 		if(writeToggle==false){ //First write
 			/*
 			t: ....... ...HGFED = d: HGFED...
@@ -600,21 +399,212 @@ void PPU::clearSecOAM(){
 	spriteIndex=0;
 }
 
-//returns 0 for none, 1 for left, 2 for right, 3 for both.
+
+
+//MAIN PPU CYCLE FUNCTION
+
+void PPU::cycle(){
+	
+	//VBLANK scanlines
+	//Overrides @ 241,1 and 261,1
+	if(scanLine == 241 && cycles==1){
+		vblank = true;
+		vblankStatus = true;
+	}
+	
+	
+	
+	//SCROLLING RELATED
+	
+	//At Dot 256 the PPU increments the vertical position in v
+	if(cycles == 256 && (showSprites || showBackground)){
+		//Y incrementing
+		//cout << showSprites << " - " << showBackground << endl;
+		if((vramAddr & 0x7000) != 0x7000){ //fine y < 7
+			//cout << (vramAddr & 0x7000) << endl;
+			vramAddr += 0x1000; //Add one to fine y
+		} else {
+			vramAddr &= ~0x7000; //fine y = 0;
+			int coarseY = (vramAddr & 0x03E0) >> 5; //y is coarse y
+			//cout << "sL " << scanLine << " - cY " << coarseY << endl;
+			if(coarseY == 29){
+				coarseY = 0;
+				vramAddr ^= 0x0800; //switch vertical nametable
+			} else if( coarseY == 31 ){
+				coarseY = 0;
+			} else {
+				coarseY++;
+			}
+			vramAddr = (vramAddr & ~0x03E0) | (coarseY << 5 );	
+		}
+	}
+	
+	//At dot 257 PPU copies all bits related to horizontal position from t to v:
+	if(cycles == 257 && (showSprites || showBackground)){
+		//Copy horizontal position bits
+		//v: .....F.. ...EDCBA = t: ....F.. ...EDCBA
+		
+		vramAddr &= ~(0x041F);
+		vramAddr |= (vramAddrTemp&0x041F);
+		
+		//vramAddr = vramAddrTemp;	
+		
+	}
+	
+	//During dots 280 to 304 of the pre-render scanline at the end of vblank, shortly after the horizontal bits
+	//are copied from t to v at dot 257, the PPU will repeatedly copy the vertical bits from t to v from dots 280 to 304
+	if(scanLine == 261 && cycles >= 280 && cycles <= 304 && (showSprites || showBackground)){
+		//copy vertical bits
+		//v: .IHGF.ED CBA..... = t: .IHGF.ED CBA.....
+		vramAddr &= ~(0x7BE0);
+		vramAddr |= (vramAddrTemp&0x7BE0);
+	}
+	
+	
+	if(scanLine < 240 && cycles <= 248 && (showSprites || showBackground)){
+		if(cycles%8 == 0){
+			if((vramAddr & 0x001F) == 31){
+				vramAddr &= ~0x001F; //Coarse X = 0
+				vramAddr ^= 0x0400;	 //Switch nametables
+			} else {
+				vramAddr += 1;	//increment coarse x
+			}	
+		}
+	}
+	
+	
+	if(scanLine == 261 && cycles==1){
+		vblank = false;
+		vblankStatus = false;
+		vblankSeen = false;
+		sprite0hit = false;
+		spriteOverflow = false;
+	}
+	
+	
+	
+	if(cycles <= 340)
+		cycles++;
+	else {
+		//End of scanline
+		cycles = 0;
+		//Increment scanline or increment frame
+		if(scanLine <= 261){
+			//Spite evaluation on each scanline beginning 
+			clearSecOAM();
+			for(int i = 0; i<64;i++){
+				if(spriteIndex > 7) break;
+				if(scanLine+1-(ppuReadOAM(i*4))<8 && scanLine+1-(ppuReadOAM(i*4))>=0 && scanLine < 240){
+					for(int n = 0; n<4; n++){
+						ppuWriteSecOAM((spriteIndex*4)+n, ppuReadOAM((i*4)+n));
+					}
+					spriteIndex++;
+				}
+			}
+			//Increment Scanline
+			scanLine++;
+		}else{
+			//End of frame
+			scanLine = 0;
+			frame++;
+			frameEnd = true;
+			SDLrenderer->onFrameEnd();
+		}
+	}
+	
+	int tileAddr = (0x2000 | (vramAddr& 0x0FFF));
+
+	//int tileAddr = 0x2000+(0x20*floor(scanLine/8))+floor(cycles/8);
+	//if(frame > 400)
+	// 	cout << "finex: " << hex << (int)fineXScroll << endl;
+		
+	int tileID = ppuReadMem(tileAddr);
+	int nextTileID = ppuReadMem(tileAddr+1);
+	
+	//cout << hex << "vram @ " << cycles << ", " << scanLine << ", " << frame <<" -> " << vramAddr <<" -> tile addr -> " << tileAddr << " -> tile -> " << tileID << endl;
+	
+	//TODO implement palette
+	int color;
+	
+	if(showBackground){
+		//cout << dec <<" frame " << frame << " sl " << scanLine << " dot " << cycles << hex << "tileAddr " << (0x2000 | (vramAddr& 0x0FFF)) << endl;
+		color = fetchTilePixel(tileID, nextTileID, scanLine, cycles, backgroundPatternTable);
+		
+		//color = tileID;
+	} else {
+		color = 0; //do not draw background
+	}
+	
+	if(!showSprites || (cycles<8 && showLeftSprites)){
+		; //do not draw sprites
+	} else {
+		int spriteColor;
+		for(int i = 0; i<= spriteIndex; i++){
+			if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>=0){
+				spriteColor = fetchSpritePixel(ppuReadSecOAM(i*4+1),scanLine-ppuReadSecOAM(i*4), cycles-ppuReadSecOAM(i*4+3), spritePatternTable, ppuReadSecOAM(i*4+2));
+				//Sprite zero hit detection: uses the background color value just assigned to 
+				//check if the sprite has drawn an opaque pixel over a opaque background pixel
+				if(i==0 && color!=0 && spriteColor!=0){
+					//Sprite 0 hit detected
+					//cout << "Sprite 0 hit" << endl;
+					sprite0hit=true;
+				}
+			
+				if(spriteColor != 0){
+					color = spriteColor;
+				}
+			}	
+		
+		
+		}
+	}
+	color = color*85;
+	
+	ppuR = color;
+	ppuG = color;
+	ppuB = color; 
+	
+	/*if((0x2000 | (vramAddr& 0x0FFF)) > 0x2400){
+		if(cycles%8 == 0){
+			ppuR = 0xFF;
+		}
+	}
+	
+	if((0x2000 | (vramAddr& 0x0FFF)) > 0x2800){
+		if(cycles%8 == 2){
+			ppuG = 0xFF;
+		}
+	}
+	
+	if((0x2000 | (vramAddr& 0x0FFF)) > 0x2C00){
+		if(cycles%8 == 4){
+			ppuB = 0xFF;
+		}
+	}*/
+	
+	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
+	SDLrenderer->setDrawLoc(cycles, scanLine);
+	SDLrenderer->renderPixelCallback();
+	
+}
+
+
+//returns pixel value - 0 for none, 1 for left, 2 for right, 3 for both.
 int PPU::fetchTilePixel(int tileID, int nextTileID, int scanL, int cyc, bool ptHalf){
 	int pixelValue = 0;
 	uint16_t ppuTileLineAddress;
 	int tempfineXScroll = fineXScroll;
 	
-	//SCROLLING WORKS
+	//SCROLLING WORKS HELL YEAH
+	
+	//This checks if the current pixel has passed the end of the first tile. If it does, it loads the next tile so that the offset begins at this boundary.
 	if(((cyc-1)%8)>(7-tempfineXScroll)){
 			tileID = nextTileID;
 			cyc = ((cyc-1)%8)-(7-tempfineXScroll);
 			tempfineXScroll = 0;
 			
 	} 
-	
-			
+
 	for(int half = 0; half<=1; half++){
 		int fineY = (vramAddr&0x7000)>>12;
 		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8) + fineY;// + (scanL%8);

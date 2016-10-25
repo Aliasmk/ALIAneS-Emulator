@@ -242,7 +242,7 @@ void CPU::writeMem(int address, byte value){
 	else if(address >= 0x2000 && address <= 0x3FFF){
 		//Mirror every 8 bytes
 		int offset = address%0x8;
-		for(int i = 0x2000; i<0x3FFF; i+=8){
+		for(int i = 0x2000; i<=0x3FFF; i+=8){
 			memory[i+offset] = value;
 		}
 		
