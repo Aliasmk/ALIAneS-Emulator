@@ -175,7 +175,7 @@ class PPU {
 	byte readPPUDATA();
 	void writeOAMDMA();
 	bool getNMI();
-	int fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf);
+	int fetchTilePixel(int tileID, int nextTileID, int scanL, int cyc, bool ptHalf);
 	int fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attributes);
 	bool getVBlank();
 	void setMirrorMode(int mode);

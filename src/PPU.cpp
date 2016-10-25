@@ -283,7 +283,11 @@ void PPU::cycle(){
 	int tileAddr = (0x2000 | (vramAddr& 0x0FFF));
 
 	//int tileAddr = 0x2000+(0x20*floor(scanLine/8))+floor(cycles/8);
+	//if(frame > 400)
+	// 	cout << "finex: " << hex << (int)fineXScroll << endl;
+		
 	int tileID = ppuReadMem(tileAddr);
+	int nextTileID = ppuReadMem(tileAddr+1);
 	
 	//cout << hex << "vram @ " << cycles << ", " << scanLine << ", " << frame <<" -> " << vramAddr <<" -> tile addr -> " << tileAddr << " -> tile -> " << tileID << endl;
 	
@@ -292,7 +296,7 @@ void PPU::cycle(){
 	
 	if(showBackground){
 		//cout << dec <<" frame " << frame << " sl " << scanLine << " dot " << cycles << hex << "tileAddr " << (0x2000 | (vramAddr& 0x0FFF)) << endl;
-		color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
+		color = fetchTilePixel(tileID, nextTileID, scanLine, cycles, backgroundPatternTable);
 		
 		//color = tileID;
 	} else {
@@ -597,14 +601,26 @@ void PPU::clearSecOAM(){
 }
 
 //returns 0 for none, 1 for left, 2 for right, 3 for both.
-int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
+int PPU::fetchTilePixel(int tileID, int nextTileID, int scanL, int cyc, bool ptHalf){
 	int pixelValue = 0;
 	uint16_t ppuTileLineAddress;
+	int tempfineXScroll = fineXScroll;
+	
+	if(((cyc-1)%8)>(7-tempfineXScroll)){
+			tileID = nextTileID;
+			cyc = ((cyc-1)%8)-(7-tempfineXScroll);
+			tempfineXScroll = 0;
+			
+	} 
+	
+			
 	for(int half = 0; half<=1; half++){
 		int fineY = (vramAddr&0x7000)>>12;
 		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8) + fineY;// + (scanL%8);
 		
-		byte bitmask = 0x80>>((cyc-1)%8);
+		
+		
+		byte bitmask = 0x80>>(((cyc-1)%8)+tempfineXScroll);
 			
 		if((ppuReadMem(ppuTileLineAddress) & bitmask) != 0)
 			pixelValue += half+1;
@@ -617,6 +633,7 @@ int PPU::fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attr
 	int pixelValue = 0;
 	uint16_t ppuTileLineAddress;
 	for(int half = 0; half<=1; half++){
+		
 		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8);
 		
 		if((attributes&0x80)>0)
