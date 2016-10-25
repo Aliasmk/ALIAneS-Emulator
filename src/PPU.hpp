@@ -20,9 +20,13 @@ class PPU {
 	long startTime;
 	long endTime;
 	
-	//VRAM address
+	//PPU registers
 	int vramAddr;
+	int vramAddrTemp;
+	char fineXScroll;
+	bool writeToggle;
 	
+	byte readBuffer;
 	
 	
 	
@@ -52,7 +56,7 @@ class PPU {
 	int frame;
 	
 	
-	//RENDERING - http://wiki.nesdev.com/w/index.php/PPU_rendering//
+	//RENDERING - http://wiki.nesdev.com/w/index.php/PPU_rendering// SOME OF THIS IS UNUSED
 	
 	//Two nameTable addresses are held in memory and are read and written from.
 	byte nameTable1;
@@ -116,9 +120,9 @@ class PPU {
 	byte oamValue;
 	
 	//2005 - PPUSCROLL - WRITE 2x
-	bool scrollFirstWrite;	//TODO implement whole 2005 scroll
-	byte ppuscroll_scrollPosX;
-	byte ppuscroll_scrollPosY;
+	bool scrollFirstWrite;	
+	byte ppuscroll_scrollPosX; //TODO implement 2005 scrollX 
+	byte ppuscroll_scrollPosY; //TODO implement 2005 scrollY
 	
 	//2006 - PPUADDR - WRITE 2x
 	bool addrFirstWrite;
@@ -130,7 +134,7 @@ class PPU {
 	
 	//4014 - OAMDMA - WRITE
 	
-	
+	int mirrorMode;
 	
 	void testReadPatternTable();
 	
@@ -171,8 +175,9 @@ class PPU {
 	byte readPPUDATA();
 	void writeOAMDMA();
 	bool getNMI();
-	int fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf);
+	int fetchTilePixel(int tileID, int nextTileID, int scanL, int cyc, bool ptHalf);
 	int fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attributes);
 	bool getVBlank();
+	void setMirrorMode(int mode);
 };
 #endif

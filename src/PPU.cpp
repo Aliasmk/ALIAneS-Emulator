@@ -8,6 +8,7 @@
 #include "PPU.hpp"
 #include <math.h>
 #include <time.h>
+#include <assert.h>
 using namespace std;
 
 typedef uint8_t byte;
@@ -15,22 +16,23 @@ typedef uint8_t byte;
 bool nDebugging = false;
 
 SDLrender* SDLrenderer;
-//CPU* ptr_nesCPU;
-
 
 PPU::PPU(){
 	cout << "NES PPU is now on." <<endl;
 	for(int i = 0; i<0x3FFF; i++){
 		ppuWriteMem(i, 0);
 	}
-	//ptr_nesCPU = nCPU; //address of?
 }
 
 void PPU::start(SDLrender* r){
 	SDLrenderer = r;
 	startTime = time(0);
 	spriteIndex=0;
-	
+	frame=0;
+	vramAddr = 0;
+	vramAddrTemp = 0;
+	writeToggle = false;
+	vramIncrementMode = false;
 	
 	addrFirstWrite = true;
 	vblank = false;
@@ -39,9 +41,12 @@ void PPU::start(SDLrender* r){
 	showBackground=true;
 	showLeftSprites=true;
 	showLeftBackground=true;
+	ppuscroll_scrollPosX = 0;
+	ppuscroll_scrollPosY = 0;
+	scrollFirstWrite=true;
+	readBuffer = 0;
 	
 	cout << "PPU Initialization: Complete" << endl;
-	
 }
 
 void PPU::stop(){
@@ -57,149 +62,254 @@ void PPU::stop(){
 	}
 }
 
+//MEMORY FUNCTIONS
+
 void PPU::ppuWriteMem(int address, byte value){
-	ppuMemory[address] = value;
+	address = address%0x4000;
+	assert(address <= 0x3FFF);
+	//1 = vert mirror 
+	//0 = horiz mirror
+	int offset;
+	//cout << "Writing " << hex << (int)value << " to PPU vram " << address << endl;
+	//Nametable Mirroring
+	if(address >= 0x2000 && address < 0x2400){
+		offset = address-0x2000;
+		ppuMemory[address] = value;
+		if(mirrorMode == 0){ //Horiz Mirror
+			ppuMemory[0x2400+offset] = value;
+		} else if(mirrorMode == 1){ //Vert Mirror
+			ppuMemory[0x2800+offset] = value;
+		}
+		
+	} else if(address >= 0x2400 && address < 0x2800){
+		offset = address-0x2400;
+		ppuMemory[address] = value;
+		if(mirrorMode == 0){ //Horiz Mirror
+			ppuMemory[0x2000+offset] = value;
+		} else if(mirrorMode == 1){ //Vert Mirror
+			ppuMemory[0x2C00+offset] = value;
+		}
+		
+	} else if ( address >= 0x2800 && address < 0x2C00 ){
+		offset = address-0x2800;
+		ppuMemory[address] = value;
+		if(mirrorMode == 0){ //Horiz Mirror
+			ppuMemory[0x2C00+offset] = value;
+		} else if(mirrorMode == 1){ //Vert Mirror
+			ppuMemory[0x2000+offset] = value;
+		}
+		
+	} else if ( address >= 0x2C00 && address < 0x3000){
+		offset = address-0x2C00;
+		ppuMemory[address] = value;
+		if(mirrorMode == 0){ //Horiz Mirror
+			ppuMemory[0x2800+offset] = value;
+		} else if(mirrorMode == 1){ //Vert Mirror
+			ppuMemory[0x2400+offset] = value;
+		}
+	} else {
+		ppuMemory[address] = value;
+	}
+	
+	//Memory Mirroring
+	if(address >= 0x2000 && address <= 0x2EFF){
+		offset = address - 0x2000;
+		ppuMemory[0x3000+offset] = value;
+	}
+	
+	if(address >= 0x3F00 && address <= 0x3F1F){
+		offset = address - 0x3F00;
+		ppuMemory[0x3F20+offset]=value;
+	}
+	
+	
 	//cout << "writing value " << hex << (int)value << " to PPU address " << (int)address << endl;
 }
+
+/*void PPU::ppuWrite(value){
+
+}*/
 
 void PPU::ppuWriteOAM(int address, byte value){
 	oamMemory[address] = value;
 	//cout << "writing value " << hex << (int)value << " to PPU OAM address " << (int)address << endl;
 }
-
 void PPU::ppuWriteSecOAM(int address, byte value){
 	oamMemorySec[address] = value;
 	//cout << "writing value " << hex << (int)value << " to PPU Sec OAM address " << (int)address << endl;
 }
-
 byte PPU::ppuReadMem(int address){
-	return ppuMemory[address];
+	address = address % 0x4000;
+	assert(address <= 0x3FFF);
+	//1 = vert mirror 0 = horiz mirror
+	/*int offset;
+	if(address >= 0x2400 && address < 0x2800){
+		offset = address-0x2400;
+		if(mirrorMode == 0){
+			address = 0x2000 + offset;
+		} else if (mirrorMode == 1)	{
+			//address = address;
+		}
+	} else if ( address >= 0x2800 && address < 0x2C00 ){
+		offset = address-0x2800;
+		if(mirrorMode == 0){
+			address = 0x2000 + offset;
+		} else if (mirrorMode == 1)	{
+			//address = address;
+		}
+	} else if ( address >= 0x2C00 && address < 0x3000){
+		offset = address-0x2800;
+		if(mirrorMode == 0){
+			address = 0x2400 + offset;
+		} else if (mirrorMode == 1)	{
+			address = 0x2800 + offset;
+		}
+	}*/
+	
+	return ppuMemory[address];	
 }
-
 byte PPU::ppuReadOAM(int address){
 	return oamMemory[address];
 }
-
 byte PPU::ppuReadSecOAM(int address){
 	return oamMemorySec[address];
 }
 
+//CYCLE FUNCTION
 
 void PPU::cycle(){
-	//cout << "PPU" << endl;
-	//cout << "vram address: " << vramAddr << endl;
 	
-	//if(scanLine == 241 && cycles==1 && nmiEnable){
+	//Overrides @ 241,1 and 261,1
 	if(scanLine == 241 && cycles==1){
 		vblank = true;
 		vblankStatus = true;
-		//ptr_nesCPU->triggerInterrupt(1);
-		//cout << endl<< "vBlank begins" <<endl;
 	}
+	
+	
+	if(cycles == 256 && (showSprites || showBackground)){
+		//Y incrementing
+		//cout << showSprites << " - " << showBackground << endl;
+		if((vramAddr & 0x7000) != 0x7000){ //fine y < 7
+			//cout << (vramAddr & 0x7000) << endl;
+			vramAddr += 0x1000; //Add one to fine y
+		} else {
+			vramAddr &= ~0x7000; //fine y = 0;
+			int coarseY = (vramAddr & 0x03E0) >> 5; //y is coarse y
+			//cout << "sL " << scanLine << " - cY " << coarseY << endl;
+			if(coarseY == 29){
+				coarseY = 0;
+				vramAddr ^= 0x0800; //switch vertical nametable
+			} else if( coarseY == 31 ){
+				coarseY = 0;
+			} else {
+				coarseY++;
+			}
+			vramAddr = (vramAddr & ~0x03E0) | (coarseY << 5 );
+			
+		}
+	}
+	
+	
+	
+	if(scanLine < 240 && cycles <= 256 && (showSprites || showBackground)){
+		if(cycles%8 == 0){
+			if((vramAddr & 0x001F) == 31){
+				vramAddr &= ~0x001F; //Coarse X = 0
+				vramAddr ^= 0x0400;	 //Switch nametables
+			} else {
+				vramAddr += 1;	//increment coarse x
+			}	
+		}
+	}
+	
+	if(cycles == 257 && (showSprites || showBackground)){
+		//Copy horizontal position bits
+		//v: .....F.. ...EDCBA = t: ....F.. ...EDCBA
+		
+		vramAddr &= ~(0x041F);
+		vramAddr |= (vramAddrTemp&0x041F);
+		
+		//vramAddr = vramAddrTemp;	
+		
+	}
+	
 	if(scanLine == 261 && cycles==1){
 		vblank = false;
 		vblankStatus = false;
 		vblankSeen = false;
 		sprite0hit = false;
 		spriteOverflow = false;
-		//cout << endl<< "vBlank ends" <<endl;
+	}
+	
+	
+	if(scanLine == 261 && cycles >= 280 && cycles <= 304 && (showSprites || showBackground)){
+		//copy vertical bits
+		//v: .IHGF.ED CBA..... = t: .IHGF.ED CBA.....
+		vramAddr &= ~(0x7BE0);
+		vramAddr |= (vramAddrTemp&0x7BE0);
 	}
 	
 	if(cycles < 340)
 		cycles++;
 	else {
+		//End of scanline
 		cycles = 0;
+		//Increment scanline or increment frame
 		if(scanLine < 261){
-			
+			//Spite evaluation on each scanline beginning 
 			clearSecOAM();
-			
 			for(int i = 0; i<64;i++){
 				if(spriteIndex > 7) break;
-				
 				if(scanLine+1-(ppuReadOAM(i*4))<8 && scanLine+1-(ppuReadOAM(i*4))>=0 && scanLine < 240){
-					//cout << dec << (int)ppuReadOAM(i*4) << " - " << scanLine << " = " << ppuReadOAM(i*4)-scanLine << endl;
-					//cout << "Sprite " << spriteIndex << " data: ";
 					for(int n = 0; n<4; n++){
 						ppuWriteSecOAM((spriteIndex*4)+n, ppuReadOAM((i*4)+n));
-						//cout << hex << (int)ppuReadSecOAM(spriteIndex*4+n) << " ";
 					}
-					//cout << endl;
-					
 					spriteIndex++;
 				}
 			}
-			
-			
+			//Increment Scanline
 			scanLine++;
-			
 		}else{
+			//End of frame
 			scanLine = 0;
 			frame++;
-			/*cout << endl << endl;
-			
-			for(int y = 0; y<=29;y++){
-				for(int x = 0; x<31; x++)
-				{
-					cout << << " ";				
-				}
-				cout << endl;
-			}
-			
-			
-			cout << endl << endl;*/
-			
-			
-			
-			
-			//cout << "Sprites on screen: " << endl;
-			/*for(int i = 0; i<256; i+=4){
-				if(oamMemory[i] != 0xf0 && oamMemory[i+1] != 0xf0 && oamMemory[i+2] != 0xf0 && oamMemory[i+3] != 0xf0)
-					cout << "(" << floor(i/4) << ") tile " << hex << (int)oamMemory[i+1] << " at SL/C " << hex << (int)oamMemory[i] << "/" << (int)oamMemory[i+3] << " w attribute value " <<  (int)oamMemory[i+2] << endl;
-			}*/
-			
-			
 			frameEnd = true;
 			SDLrenderer->onFrameEnd();
-			
-			
-		
-			
-			//cout << "PPU render: " << frame << endl;
 		}
 	}
 	
 	
 	
+	int tileAddr = (0x2000 | (vramAddr& 0x0FFF));
+
+	//int tileAddr = 0x2000+(0x20*floor(scanLine/8))+floor(cycles/8);
+	//if(frame > 400)
+	// 	cout << "finex: " << hex << (int)fineXScroll << endl;
+		
+	int tileID = ppuReadMem(tileAddr);
+	int nextTileID = ppuReadMem(tileAddr+1);
 	
-	//cout << "PPU cycle " << cycles << " in scanline " << scanLine << " of frame " << frame << endl;
-	//int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
+	//cout << hex << "vram @ " << cycles << ", " << scanLine << ", " << frame <<" -> " << vramAddr <<" -> tile addr -> " << tileAddr << " -> tile -> " << tileID << endl;
+	
+	//TODO implement palette
 	int color;
-	//color = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
-	int tileID = ppuReadMem(0x2000+0x20*floor(scanLine/8)+floor(cycles/8));
 	
 	if(showBackground){
-		color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
+		//cout << dec <<" frame " << frame << " sl " << scanLine << " dot " << cycles << hex << "tileAddr " << (0x2000 | (vramAddr& 0x0FFF)) << endl;
+		color = fetchTilePixel(tileID, nextTileID, scanLine, cycles, backgroundPatternTable);
+		
+		//color = tileID;
 	} else {
-		color = 0;
+		color = 0; //do not draw background
 	}
-	
-	/*if(!showBackground || (cycles<8 && showLeftBackground)){
-		color = 0;
-	} else {
-		color = fetchTilePixel(tileID, scanLine, cycles, backgroundPatternTable);
-	}*/
 	
 	if(!showSprites || (cycles<8 && showLeftSprites)){
 		; //do not draw sprites
 	} else {
-		
-		
 		int spriteColor;
 		for(int i = 0; i<= spriteIndex; i++){
-	
 			if(cycles-ppuReadSecOAM(i*4+3)<8 && cycles-ppuReadSecOAM(i*4+3)>=0){
 				spriteColor = fetchSpritePixel(ppuReadSecOAM(i*4+1),scanLine-ppuReadSecOAM(i*4), cycles-ppuReadSecOAM(i*4+3), spritePatternTable, ppuReadSecOAM(i*4+2));
-			
 				//Sprite zero hit detection: uses the background color value just assigned to 
 				//check if the sprite has drawn an opaque pixel over a opaque background pixel
 				if(i==0 && color!=0 && spriteColor!=0){
@@ -211,46 +321,34 @@ void PPU::cycle(){
 				if(spriteColor != 0){
 					color = spriteColor;
 				}
-				
-			//if(tempcolor != 0) 
-			//	color = tempcolor;	
-			
-			
 			}	
 		
 		
 		}
-	} 
-	
-	/*int tempColor = 0;
-	for(int i = 0; i<64;i++){
-		if(ppuReadOAM(i*4) < 0xF0 || (scanLine-ppuReadOAM(i*4)<8 && cycles-ppuReadOAM((i*4)+3)<8)){
-			tempColor = fetchTilePixel(ppuReadOAM((i*4)+1), scanLine-ppuReadOAM((i*4))-1, cycles-ppuReadOAM((i*4)+3), spritePatternTable);		
-			if(tempColor != 0){
-				color = tempColor;
-			}	
-		}
-	}*/
-	
+	}
 	color = color*85;
 	
-	/*if(color == 0x24){
-		color = 0;
-	}else{*/
-		//color *= 1;
-		//if(color > 0xFF)
-		//	color = 0xFF;
-	//}
-	
-	//color += (cycles%255) - (frame%255)*2;
 	ppuR = color;
 	ppuG = color;
 	ppuB = color; 
 	
-	//ppuR += frame%255;
-	//ppuG += (scanLine%255);//+(frame%255)/5;
+	/*if((0x2000 | (vramAddr& 0x0FFF)) > 0x2400){
+		if(cycles%8 == 0){
+			ppuR = 0xFF;
+		}
+	}
 	
+	if((0x2000 | (vramAddr& 0x0FFF)) > 0x2800){
+		if(cycles%8 == 2){
+			ppuG = 0xFF;
+		}
+	}
 	
+	if((0x2000 | (vramAddr& 0x0FFF)) > 0x2C00){
+		if(cycles%8 == 4){
+			ppuB = 0xFF;
+		}
+	}*/
 	
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
@@ -267,6 +365,8 @@ void PPU::writePPUCTRL(byte in){
 	if(nDebugging)
 		cout << endl << "PPUCTRL Write: " << hex << (int)in << endl;
 	
+	//DEBUG
+	bool prevVram = vramIncrementMode;
 	
 	(in&0x80)==0x80 ? nmiEnable = true : nmiEnable = false;
 	(in&0x40)==0x40 ? ppuMode = true : ppuMode = false;
@@ -278,6 +378,9 @@ void PPU::writePPUCTRL(byte in){
 	if(nDebugging)
 		cout << "nmiEnable( " << nmiEnable << ") ppuMode(" <<ppuMode<< ") spriteHeight(" << spriteHeight << ") backgroundPatternTable (" << backgroundPatternTable << ") spritePatternTable (" << spritePatternTable << ") vramIncrementMode (" << vramIncrementMode << ")" << endl;
 	
+	/*if(vramIncrementMode != prevVram){
+		cout << "***** VRAM INCREMENT MODE IS NOW " << vramIncrementMode << endl;
+	}*/
 	
 	/*nmiEnable = in&0x80; 				//0=false, 1=true
 	ppuMode = in&0x40;					//0=read from ext, 1=output to ext
@@ -287,7 +390,9 @@ void PPU::writePPUCTRL(byte in){
 	vramIncrementMode = in&0x4; 		//0= add 1, going across, 1= add 32, going down*/
 	baseNametableAddress = in&0x3; 		//(0 = $2000; 1 = $2400; 2 = $2800; 3 = $2C00)
 	
-	
+	//t: ...BA.......... = d: ......BA
+	vramAddrTemp &= ~(0xC00);
+	vramAddrTemp |= (in&0x3)<<10;
 }
 
 void PPU::writePPUMASK(byte in){
@@ -318,6 +423,7 @@ byte PPU::readPPUSTATUS(){
 	
 	byte result = (int)vblank*0x80 + (int)sprite0hit*0x40 + (int)spriteOverflow*0x20;
 	vblank = false;
+	writeToggle=false;
 	//cout << "PPUStatus Read: " << hex << (int)result;
 	return result;
 	
@@ -337,50 +443,118 @@ void PPU::writeOAMDATA(byte in){
 }
 	
 byte PPU::readOAMDATA(){
-	cout << "Reading out value " << hex << (int)oamMemory[oamAddress] << " from oam:" << oamAddress;
+	//cout << "Reading out value " << hex << (int)oamMemory[oamAddress] << " from oam:" << oamAddress;
 	return oamMemory[oamAddress];
 }
 
 void PPU::writePPUSCROLL(byte in){
-	if(nDebugging)
-		cout << endl << "PPUSCROLL write: " << hex << (int)in << endl;
-	if(scrollFirstWrite)
-		ppuscroll_scrollPosX = in;
-	else
-		ppuscroll_scrollPosY = in;
 		
-	scrollFirstWrite = !scrollFirstWrite;
+		
+		
+		if(writeToggle==false){ //First write
+			/*
+			t: ....... ...HGFED = d: HGFED...
+			x:              CBA = d: .....CBA
+			w:                  = 1
+			*/
+			
+			vramAddrTemp &= ~(0x1F);
+			vramAddrTemp |= (in&0xF8)>>3;
+			fineXScroll = in&7;
+			writeToggle=true;
+			
+			//FIXME remove
+			//ppuscroll_scrollPosX = in;
+			//cout << endl << "PPUSCROLL X write: " << hex << floor((int)ppuscroll_scrollPosX/8) ;
+		}else{
+			/*
+				t: CBA..HGFED..... = d: HGFEDCBA
+				w:                  = 0
+			
+			*/
+			vramAddrTemp &= ~(0x73E0);
+			vramAddrTemp |= ((in&7)<<12) ;
+			vramAddrTemp |= ((in&0xF8)<<2);
+
+			writeToggle=false;
+			
+			
+			//FIXME remove
+			//ppuscroll_scrollPosY = in;
+			//cout << endl << "PPUSCROLL Y write: " << hex << floor((int)ppuscroll_scrollPosY/8) ;
+		}	
+		//cout << " at cycle " << dec << (int)cycles << ", scanline " << (int)scanLine << " frame " << (int)frame << endl;
+		//FIXME remove
+		//scrollFirstWrite = !scrollFirstWrite;
 }
 	
+//METHOD WORKS - SAME VALUES
 void PPU::writePPUADDR(byte in){
 	if(nDebugging)
 		cout << endl << "PPUADDR write: " << hex << (int)in << endl;
-	if(addrFirstWrite)
-		ppuaddr_upperByte = in;
-	else{
-		ppuaddr_lowerByte = in;
+	if(writeToggle==false){
+		/*
+			t: .FEDCBA ........ = d: ..FEDCBA
+			t: X...... ........ = 0
+			w:                  = 1
+		*/	
+		vramAddrTemp &= ~(0x3F00);
+		vramAddrTemp |= ((in&0x3f)<<8);
+		//vramAddrTemp &= ~(1<<14);
+		writeToggle=true;
+		
+		//FIXME remove
+		//ppuaddr_upperByte = in;
+	}else{
+		/*
+			t: ....... HGFEDCBA = d: HGFEDCBA
+			v                   = t
+			w:                  = 0
+		*/
+		vramAddrTemp &= ~(0xFF);
+		vramAddrTemp |= in;vramAddr=vramAddrTemp;
+		
+		vramAddr = vramAddr%0x4000;
+		//FIXME vram set assertion
+		assert(vramAddr <= 0x3FFF);
+		if(nDebugging){
+			cout << "VRAM address changed to " << vramAddr;
+		}
+		writeToggle=false;
+		
+		//FIXME remove
+		/*ppuaddr_lowerByte = in;
 		if(nDebugging){
 			cout << "VRAM address changed from " << vramAddr;
 			vramAddr =  ppuaddr_lowerByte| (ppuaddr_upperByte << 8);	
 			cout << " to " << vramAddr <<endl;
-		} else
+		} else {
 			vramAddr =  ppuaddr_lowerByte| (ppuaddr_upperByte << 8);
+		}*/
 	}
-		
-	addrFirstWrite = !addrFirstWrite;
-	
-	
+	//FIXME remove
+	//addrFirstWrite = !addrFirstWrite;	
 }
 
 void PPU::writePPUDATA(byte in){
+	
+	int writeLocation = vramAddr % 0x4000;
+	assert(writeLocation <= 0x3FFF);
+	
 	//TODO PPUDATA WRITE
 	if(nDebugging){
 	
-		cout << endl << "PPUDATA WRITE: " <<  hex << (int)in << " to vram addr " << hex << vramAddr << endl;
+		//cout << endl << "PPUDATA WRITE: " <<  hex << (int)in << " to vram addr " << hex << writeLocation << endl;
 	
 	}
 	
-	ppuWriteMem(vramAddr,in);
+	if(in == 0x4B || in == 0x4F)
+			cout << endl << "PPUDATA WRITE: " <<  hex << (int)in << " to vram addr " << hex << writeLocation << endl;
+	
+	//FIXME vram write assertion
+	
+	ppuWriteMem(writeLocation,in);
+	
 	if(vramIncrementMode)
 		vramAddr+=32;
 	else
@@ -390,9 +564,22 @@ void PPU::writePPUDATA(byte in){
 byte PPU::readPPUDATA(){
 	//TODO PPUDATA READ
 	
-	byte out = ppuReadMem(vramAddr);
+	int readLocation = vramAddr % 0x4000;
+	assert(readLocation <= 0x3FFF);
+	
+	byte temp = ppuReadMem(readLocation);
+	byte out;
+	if(vramAddr < 0x3F00){
+		out = readBuffer;
+		readBuffer = temp;
+	
+	} else {
+		out = temp;
+		readBuffer = temp;
+	}
+	
 	if(nDebugging)
-		cout << endl << "PPUDATA READ: " <<  hex << (int)out << " from vram addr " << hex << vramAddr << endl;
+		cout << endl << "PPUDATA READ: " <<  hex << (int)out << " from vram addr " << hex << readLocation << endl;
 	if(vramIncrementMode)
 		vramAddr+=32;
 	else
@@ -401,7 +588,7 @@ byte PPU::readPPUDATA(){
 }
 
 void PPU::writeOAMDMA(){
-	//TODO OAM DATA WRITE
+	//Done on CPU
 	//cout << "Write OAMDMA has been called" << endl;
 }
 
@@ -414,14 +601,27 @@ void PPU::clearSecOAM(){
 }
 
 //returns 0 for none, 1 for left, 2 for right, 3 for both.
-int PPU::fetchTilePixel(int tileID, int scanL, int cyc, bool ptHalf){
+int PPU::fetchTilePixel(int tileID, int nextTileID, int scanL, int cyc, bool ptHalf){
 	int pixelValue = 0;
 	uint16_t ppuTileLineAddress;
+	int tempfineXScroll = fineXScroll;
+	
+	//SCROLLING WORKS
+	if(((cyc-1)%8)>(7-tempfineXScroll)){
+			tileID = nextTileID;
+			cyc = ((cyc-1)%8)-(7-tempfineXScroll);
+			tempfineXScroll = 0;
+			
+	} 
+	
+			
 	for(int half = 0; half<=1; half++){
-	//Possibly spritePatternTable
-		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8) + (scanL%8);
+		int fineY = (vramAddr&0x7000)>>12;
+		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8) + fineY;// + (scanL%8);
 		
-		byte bitmask = 0x80>>(cyc%8);
+		
+		
+		byte bitmask = 0x80>>(((cyc-1)%8)+tempfineXScroll);
 			
 		if((ppuReadMem(ppuTileLineAddress) & bitmask) != 0)
 			pixelValue += half+1;
@@ -434,7 +634,7 @@ int PPU::fetchSpritePixel(int tileID, int scanL, int cyc, bool ptHalf, byte attr
 	int pixelValue = 0;
 	uint16_t ppuTileLineAddress;
 	for(int half = 0; half<=1; half++){
-	//Possibly spritePatternTable
+		
 		ppuTileLineAddress = ptHalf*0x1000 + floor(tileID/16)*0x100 + (tileID%16)*0x10 + (half*0x8);
 		
 		if((attributes&0x80)>0)
@@ -461,4 +661,8 @@ bool PPU::getNMI(){
 
 bool PPU::getVBlank(){
 	return vblank;
+}
+
+void PPU::setMirrorMode(int mode){
+	mirrorMode = mode;
 }
