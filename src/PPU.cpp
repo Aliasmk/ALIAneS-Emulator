@@ -405,16 +405,33 @@ void PPU::clearSecOAM(){
 
 void PPU::cycle(){
 	
-	//VBLANK scanlines
-	//Overrides @ 241,1 and 261,1
+	
+	
+	
+	
+	
+	
+	
+	
+	//--VBLANK RELATED
+	
+	//VBLANK Begin
 	if(scanLine == 241 && cycles==1){
 		vblank = true;
 		vblankStatus = true;
 	}
+	//VBLANK End
+	if(scanLine == 261 && cycles==1){
+		vblank = false;
+		vblankStatus = false;
+		vblankSeen = false;
+		sprite0hit = false;
+		spriteOverflow = false;
+	}
 	
 	
 	
-	//SCROLLING RELATED
+	//--SCROLLING RELATED
 	
 	//At Dot 256 the PPU increments the vertical position in v
 	if(cycles == 256 && (showSprites || showBackground)){
@@ -473,16 +490,7 @@ void PPU::cycle(){
 	}
 	
 	
-	if(scanLine == 261 && cycles==1){
-		vblank = false;
-		vblankStatus = false;
-		vblankSeen = false;
-		sprite0hit = false;
-		spriteOverflow = false;
-	}
-	
-	
-	
+	//VISIBLE SCANLINES 
 	if(cycles <= 340)
 		cycles++;
 	else {
@@ -512,7 +520,7 @@ void PPU::cycle(){
 		}
 	}
 	
-	int tileAddr = (0x2000 | (vramAddr& 0x0FFF));
+	int tileAddr = (0x2000 | ((vramAddr)& 0x0FFF));
 
 	//int tileAddr = 0x2000+(0x20*floor(scanLine/8))+floor(cycles/8);
 	//if(frame > 400)
@@ -585,6 +593,8 @@ void PPU::cycle(){
 	SDLrenderer->setNextColor(ppuR,ppuG,ppuB);
 	SDLrenderer->setDrawLoc(cycles, scanLine);
 	SDLrenderer->renderPixelCallback();
+	
+	
 	
 }
 
