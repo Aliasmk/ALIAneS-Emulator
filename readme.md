@@ -7,7 +7,7 @@
 CPU Complete! Bronze goal achieved! 
 
 PPU in development! We have basic emulation of background and sprites. Donkey Kong, Pinball and other simple games work great.
-Scrolling, sprite 0 hit, palettes, masking and other features still need to be implemented.
+Scrolling is still pretty glitchy. I'll probably have to re-write the PPU - after getting X scrolling to work "okay" with Super Mario Bros, I broke some other (non-scrolling) games. Also Y scrolling still doesn't work. 
 
 ###Project Goals###
 
