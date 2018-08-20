@@ -1,15 +1,15 @@
-#ALIAneS Emulation Project#
+# ALIAneS Emulation Project
 * Michael Kafarowski
 * Project start date : March 10th 2015
 
-###Current Progress and To do's###
+### Current Progress and To do's
 
 CPU Complete! Bronze goal achieved! 
 
 PPU in development! We have basic emulation of background and sprites. Donkey Kong, Pinball and other simple games work great.
 Scrolling is still pretty glitchy. I'll probably have to re-write the PPU - after getting X scrolling to work "okay" with Super Mario Bros, I broke some other (non-scrolling) games. Also Y scrolling still doesn't work. 
 
-###Project Goals###
+### Project Goals
 
 I have a tier'd goal structure for this project:
 
@@ -19,13 +19,13 @@ I have a tier'd goal structure for this project:
 - Platinum: Add more mapper support and APU emulation. Games should run at or higher than full speed.
 
 
-###Terms###
+### Terms
 
 * CPU - Central Processing Unit : The chip that takes care of reading and executing instructions that appear in memory.
 * PPU - Pixel Processing Unit : The chip that accepts commands from the CPU and using special tables in its own memory, takes care of drawing sprites and backgrounds to the screen.
 * APU - Audio Processing Unit : Takes care of the game sound generation.
 * More defined terms coming soon.
 
-###About###
+### About
 
 This is a project I am undertaking to learn more about a lot of things: advanced C++ coding, emulation, microprocessors, assembly language... etc. I am having a lot of fun with the development of this software as well, and regardless of how the final product turns out, this has already proven to be an amazing learning experience.
