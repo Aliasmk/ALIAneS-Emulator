@@ -6,6 +6,9 @@
  */
 
 #include "Cartridge.hpp"
+#include "CPU.hpp"
+#include  "PPU.hpp"
+
 
 
 
@@ -24,13 +27,13 @@ struct Cartridge::flag7 {
 	bool VS: 1;					//VS
 };
 
-Cartridge::Cartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *nesPPU){
+Cartridge::Cartridge(std::string cartPath, CPU *nesCPU, PPU *nesPPU){
 	openCartridge(cartPath, nesCPU, nesPPU);
 	std::cout << "Cartridge is now loaded." << std::endl;
 }
 
 //Open the file stream, parse the header and based on that information, allocate CPU memory for program rom.
-void Cartridge::openCartridge(std::string cartPath, CPU::CPU *nesCPU, PPU::PPU *nesPPU){
+void Cartridge::openCartridge(std::string cartPath, CPU *nesCPU, PPU *nesPPU){
 	validCart = false;
 	//Open file as binary and check that it opened
 	currentCart.open(cartPath, std::ios::binary);

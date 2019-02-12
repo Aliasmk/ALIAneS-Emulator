@@ -7,8 +7,12 @@
 #ifndef RENDERER
 #define	RENDERER
 
+#include <sys/types.h>
 #include <iostream>
+#include <cstdint>
+
 #include <SDL2/SDL.h>
+
 
 class SDLrender {
 	private:

@@ -9,6 +9,7 @@
 #define	NESPPU
 
 #include <iostream>
+#include <stdint.h>
 #include "SDLrender.hpp"
 
 //TODO clean up header and class.

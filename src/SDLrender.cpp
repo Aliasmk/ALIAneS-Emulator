@@ -9,6 +9,7 @@
 #include "SDLrender.hpp"
 #include <cstdlib>
 
+
 using namespace std;
 
 SDL_Window* window = NULL;

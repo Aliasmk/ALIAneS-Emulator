@@ -8,6 +8,7 @@
 #ifndef NES_CARTRIDGE
 #define NES_CARTRIDGE
 
+#include <cstdint>
 #include <fstream>
 #include <string>
 #include <iostream>

@@ -11,6 +11,7 @@
 #include <string>
 #include <iostream>
 #include <cstdlib>
+#include <stdint.h>
 #include "CPU.hpp"
 #include "PPU.hpp"
 #include "SDLrender.hpp"
